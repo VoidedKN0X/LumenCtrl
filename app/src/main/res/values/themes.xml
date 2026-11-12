@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Ctrl launcher ground, shared by every Ctrl app -->
+    <color name="ic_bg">#FF121418</color>
+    <!-- Ctrl / Signal Light: window behind Compose before first frame -->
+    <style name="Theme.Lumen" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/ground</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+    </style>
+    <color name="ground">#FFF5F5F1</color>
+</resources>

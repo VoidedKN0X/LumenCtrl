@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- The live preview and export both run on an OpenGL ES 3.0 shader. -->
+    <uses-feature android:glEsVersion="0x00030000" android:required="true" />
+    <!-- Capture goes through the system camera app; the device doesn't need a camera. -->
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <!-- USB camera import (PTP/MTP over USB host / OTG). Optional. -->
+    <uses-feature android:name="android.hardware.usb.host" android:required="false" />
+
+    <!--
+      Privacy: there is deliberately NO android.permission.INTERNET here, so Android
+      blocks every network connection from this app. Import uses the system Photo
+      Picker, export writes through MediaStore, and capture uses the camera app, so
+      no storage or camera permissions are needed either. Remove any permission a
+      library tries to merge in.
+    -->
+    <uses-permission android:name="android.permission.INTERNET" tools:node="remove" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" tools:node="remove" />
+
+    <application
+        android:allowBackup="false"
+        android:fullBackupContent="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="LumenCtrl"
+        android:largeHeap="true"
+        android:theme="@style/Theme.Lumen"
+        tools:targetApi="31">
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:launchMode="singleTop"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <!-- Share images into the library from any app. -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="image/*" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.SEND_MULTIPLE" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="image/*" />
+            </intent-filter>
+            <!-- Offer to open when a PTP/MTP camera is plugged in (also pre-grants USB access). -->
+            <intent-filter>
+                <action android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED" />
+            </intent-filter>
+            <meta-data
+                android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED"
+                android:resource="@xml/usb_camera_filter" />
+            <!-- "Open with LumenCtrl". -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="image/*" />
+            </intent-filter>
+        </activity>
+
+        <!-- Hands camera captures and shared exports to other apps without exposing storage. -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.files"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+    </application>
+</manifest>

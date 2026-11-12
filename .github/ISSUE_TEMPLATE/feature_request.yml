@@ -1,0 +1,21 @@
+name: Feature request
+description: Suggest an idea for LumenCtrl
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would you like?
+      description: Describe the feature or change.
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why would it help you?
+      description: What would you use it for?
+  - type: textarea
+    id: else
+    attributes:
+      label: Anything else?
+      description: Examples, screenshots or other apps that do it well.

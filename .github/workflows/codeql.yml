@@ -1,0 +1,52 @@
+name: CodeQL
+
+# Static analysis of the app's Java and Kotlin code. Results go to the Security tab; this never
+# blocks a release.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "app/**"
+      - "gradle/**"
+      - "*.gradle.kts"
+      - "gradle.properties"
+  schedule:
+    - cron: "17 3 * * 2"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: gradle/actions/setup-gradle@ed408507eac070d1f99cc633dbcf757c94c7933a # v4
+
+      - uses: github/codeql-action/init@f3bbb05694c2f74569081c28664c0866d64dec21 # v4.39.3
+        with:
+          languages: java-kotlin
+          build-mode: manual
+
+      - name: Build (debug, no signing key)
+        run: |
+          chmod +x gradlew
+          # Compiled for real (no build cache) and in-process, so CodeQL sees every Kotlin file. Without CI
+          # set, the build doesn't ask for the release signing key, which this workflow never gets.
+          env -u CI -u GITHUB_ACTIONS ./gradlew --no-daemon --no-build-cache -Pkotlin.compiler.execution.strategy=in-process assembleDebug
+
+      - uses: github/codeql-action/analyze@f3bbb05694c2f74569081c28664c0866d64dec21 # v4.39.3
+        with:
+          category: "/language:java-kotlin"

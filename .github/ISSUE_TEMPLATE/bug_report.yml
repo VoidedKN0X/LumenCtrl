@@ -1,0 +1,63 @@
+name: Bug report
+description: Something in LumenCtrl doesn't work as it should
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a problem.
+
+        **Before you post:** this issue is public. Please remove personal details from your text and screenshots: your photos, their names, locations and anything else private.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Describe the problem.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: How can I make it happen too?
+      placeholder: |
+        1. Open a photo and go to Edit > Detail
+        2. Tap ...
+        3. See ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+      description: What should have happened instead?
+  - type: input
+    id: app-version
+    attributes:
+      label: LumenCtrl version
+      description: Open Settings (gear icon in the library); the version is under About.
+      placeholder: "Settings > About, e.g. 0.1.0"
+    validations:
+      required: true
+  - type: input
+    id: android
+    attributes:
+      label: Android version, phone and ROM
+      placeholder: "Android 16, Galaxy S9, LineageOS 24"
+    validations:
+      required: true
+  - type: dropdown
+    id: source
+    attributes:
+      label: Installed from
+      options:
+        - GitHub Releases
+        - Obtainium
+        - CtrlF-Droid
+        - Built into VKNX OS
+        - Built it myself
+  - type: textarea
+    id: logs
+    attributes:
+      label: Screenshots or logs
+      description: Drag images in here. Remember to hide personal details first.

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- Only these two cache folders are ever shared; the library itself never is. -->
+    <cache-path name="capture" path="capture/" />
+    <cache-path name="share" path="share/" />
+</paths>
