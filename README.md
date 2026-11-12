@@ -8,7 +8,7 @@ LumenCtrl edits photos and videos the way desktop raw editors do: every change i
 
 Part of the [Ctrl series](#the-ctrl-series) by VKNXWorks.
 
-<a href="https://apps.obtainium.imranr.dev/redirect?r=obtainium://add/https://github.com/VoidedKN0X/LumenCtrl"><img src=".github/assets/badge_obtainium.png" alt="Get it on Obtainium" height="80"></a>
+<a href="https://apps.obtainium.imranr.dev/redirect?r=obtainium://add/https://github.com/VoidedKN0X/LumenCtrl"><img src=".github/assets/badge_obtainium.png" alt="Get it on Obtainium" height="80"></a> <a href="https://voidedkn0x.github.io/CtrlF-Droid/"><img src=".github/assets/badge_ctrlf-droid.png" alt="Get it from our F-Droid repo" height="80"></a>
 
 ## Features
 
@@ -60,7 +60,12 @@ Part of the [Ctrl series](#the-ctrl-series) by VKNXWorks.
 2. Open it on your phone. Android may ask you to allow installing apps from your browser or file manager.
 3. Updates install over the old version. Your library and settings are kept.
 
-**Automatic updates:** on your phone, tap the Obtainium button above. Install [Obtainium](https://github.com/ImranR98/Obtainium) first; the button adds LumenCtrl and installs every new release for you. If the button doesn't open the app, add `https://github.com/VoidedKN0X/LumenCtrl` in Obtainium by hand.
+**Automatic updates:** on your phone, tap one of the buttons above.
+
+- **Obtainium:** install [Obtainium](https://github.com/ImranR98/Obtainium) first. The button adds LumenCtrl and installs every new release for you.
+- **F-Droid:** adds the [CtrlF-Droid repo](https://voidedkn0x.github.io/CtrlF-Droid/) to F-Droid, Droid-ify or Neo Store, with every Ctrl app and automatic updates.
+
+If the Obtainium button doesn't open the app, add `https://github.com/VoidedKN0X/LumenCtrl` in Obtainium by hand.
 
 ## Getting started
 
@@ -76,7 +81,7 @@ Part of the [Ctrl series](#the-ctrl-series) by VKNXWorks.
 
 - **Open source.** All of LumenCtrl's code is in this repo, under the GPL-3.0 licence. Anyone can read it.
 - **Built by GitHub, not on a personal computer.** Every release on the Releases page is built by [the build workflow](.github/workflows/build.yml) on GitHub Actions, straight from the code in this repo. Each build also checks that the app has no network permission and no Google libraries other than LiteRT.
-- **Always signed with the same key.** Android refuses to install an update signed with a different key over LumenCtrl. The SHA-256 fingerprint of LumenCtrl's signing certificate is:
+- **Always signed with the same key.** Android refuses to install an update signed with a different key over LumenCtrl, and the CtrlF-Droid repo only accepts APKs signed with this key. The SHA-256 fingerprint of LumenCtrl's signing certificate is:
 
   ```
   FD:ED:53:E2:14:DD:BA:D3:3B:B3:54:DD:81:37:99:15:5D:19:26:89:6E:F1:AB:28:8C:BD:2E:A3:3E:47:BE:81
