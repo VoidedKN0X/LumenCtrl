@@ -4,6 +4,22 @@ What changed in each LumenCtrl release. Every release on the [Releases page](htt
 
 To publish a new version: bump `versionCode` and `versionName` in `app/build.gradle.kts`, add a section here, and push to `main`. Pushes without a version bump only build; they don't make a release.
 
+## v0.1.1 (2026-11-13)
+
+A security and privacy update. Editing, import and export work as before.
+
+### Security
+
+- **Safer import from USB cameras.** The file names a camera reports are no longer used to name files on the phone; LumenCtrl picks its own name and keeps only the extension. A faulty or hostile USB device can no longer use a name with "../" in it to write outside the import folder.
+- **Camera thumbnails are checked before they're shown.** Thumbnails from a USB camera are measured first and decoded at a small size, so a broken or oversized one can't use up the phone's memory.
+- **Shares and "Open with" only bring in what the other app can read.** When another app shares a photo or opens one with LumenCtrl, Android now checks that app was allowed to read it, so no app can make LumenCtrl import files on its behalf.
+- **Checked build tools.** The build now checks the Gradle download against its published checksum, so a tampered build tool can't slip into a release.
+
+### Privacy
+
+- **No debug logging in the app.** Release builds now strip debug, verbose and info log messages from the app and the libraries it uses (including the on-device AI runtime), so nothing about your photos can end up in the phone's system log.
+- **One permission fewer.** The old "use fingerprint hardware" permission, which only Android 8 and older use, is gone. The app lock's fingerprint unlock works as before through Android's biometric prompt.
+
 ## v0.1.0 (2026-11-12)
 
 The first release of LumenCtrl: a private, offline photo and video editor.

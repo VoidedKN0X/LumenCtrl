@@ -109,7 +109,14 @@ class CameraImport(private val context: Context) {
     /** The camera's embedded thumbnail (small JPEG), if it has one. */
     suspend fun thumbnail(handle: Int): Bitmap? = withContext(mtpThread) {
         val bytes = device?.getThumbnail(handle) ?: return@withContext null
-        BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+        // The thumbnail comes from the USB device: check its size first and decode it small, so a bogus one
+        // can't use up the memory.
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
+        if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return@withContext null
+        var sample = 1
+        while (maxOf(bounds.outWidth, bounds.outHeight) / (sample * 2) >= THUMB_MAX) sample *= 2
+        BitmapFactory.decodeByteArray(bytes, 0, bytes.size, BitmapFactory.Options().apply { inSampleSize = sample })
     }
 
     /** Copies one photo off the camera into [dest]. */
@@ -124,6 +131,7 @@ class CameraImport(private val context: Context) {
     }
 
     companion object {
+        private const val THUMB_MAX = 512
         val RAW_EXT = setOf("dng", "cr2", "cr3", "nef", "nrw", "arw", "srf", "sr2", "raf", "orf", "rw2", "pef", "srw", "x3f", "3fr", "iiq")
         val PHOTO_EXT = setOf("jpg", "jpeg", "heic", "heif", "hif", "png", "tif", "tiff", "webp") + RAW_EXT
     }

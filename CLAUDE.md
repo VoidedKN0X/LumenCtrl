@@ -21,6 +21,11 @@ To add a slider: add a `Param`, use `P_<key>` in `Shaders.FRAGMENT`. UI, persist
 - arm64-v8a only. Android 15+ (minSdk 35).
 - Originals are never modified. Exports strip location unless the user keeps it.
 - Models in `assets/models/` stay uncompressed (`noCompress "tflite"`) and are memory-mapped; record source, licence and sha256 of any new model in the README.
+- Names and data from outside (shared files, USB cameras) never pick a path on the phone: files are named by LumenCtrl itself. Thumbnails and images from devices are decoded with a size check first.
+
+## Dependency verification
+
+There's no `gradle/verification-metadata.xml` yet. Create it with the `verification-metadata.yml` workflow (`gh api -X POST repos/VoidedKN0X/LumenCtrl/actions/workflows/verification-metadata.yml/dispatches -f ref=main`): take the file from its log (between the BEGIN/END markers, `base64 -d | gunzip`), check it lists only Maven Central, Google's Maven and the Gradle plugin portal, and commit it. Generate it on CI, not on Windows (aapt2 is a per-OS download). After that, regenerate it the same way whenever a dependency, plugin or Gradle version changes. Never turn verification off or make it lenient.
 
 ## Releasing
 

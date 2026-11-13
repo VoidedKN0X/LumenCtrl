@@ -274,7 +274,10 @@ class LumenViewModel(app: Application) : AndroidViewModel(app) {
             val tmpDir = File(app.cacheDir, "usb")
             for (p in chosen) {
                 busy = "Importing ${okHandles.size + skipped + 1} of ${chosen.size}"
-                val tmp = File(tmpDir, "${System.nanoTime()}_${p.name}")
+                // The name comes from the USB device: never let it pick the path ("../" or "/" in it). Only a
+                // plain extension is kept.
+                val ext = p.name.substringAfterLast('.', "").lowercase().filter { it in 'a'..'z' || it in '0'..'9' }.take(8)
+                val tmp = File(tmpDir, "${System.nanoTime()}${if (ext.isEmpty()) "" else ".$ext"}")
                 val ok = cam.download(p.handle, tmp) && catalog.importFile(tmp, p.name, p.takenAt) != null
                 if (ok) okHandles += p.handle else { skipped++; tmp.delete() }
             }
