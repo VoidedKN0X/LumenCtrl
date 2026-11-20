@@ -2,7 +2,6 @@ package com.vknxworks.lumenctrl
 
 import android.content.Intent
 import android.net.Uri
-import android.os.Build
 import android.os.Bundle
 import android.view.WindowManager
 import androidx.activity.compose.BackHandler
@@ -95,13 +94,13 @@ class MainActivity : FragmentActivity() {
 
     private fun applyPrivacyFlags() {
         val s = vm.settings
-        // FLAG_SECURE blocks screenshots/recording and also blanks the recents preview.
-        if (s.hideInScreenshots || (s.hideInRecents && Build.VERSION.SDK_INT < 33)) {
+        // FLAG_SECURE blocks screenshots/recording; the recents preview has its own switch below.
+        if (s.hideInScreenshots) {
             window.setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE)
         } else {
             window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
         }
-        if (Build.VERSION.SDK_INT >= 33) setRecentsScreenshotEnabled(!s.hideInRecents)
+        setRecentsScreenshotEnabled(!s.hideInRecents)
     }
 
     private fun authenticate() {

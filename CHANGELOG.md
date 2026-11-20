@@ -13,6 +13,10 @@ Built and checked by CI only: nothing here had been run on a phone when it was w
 - **Rating, flagging and album changes are quicker in a large library.** After every change (a star rating, a flag, adding to or removing from an album, an import, a delete) LumenCtrl lists the library again, and for that it used to open and read one small file per photo, every time: thousands of file reads for one star in a big library. The facts of each photo are now kept in memory after the first read and replaced whenever LumenCtrl writes them, so listing the library again only looks at which files exist. The files on the phone are written exactly as before and remain the source of truth: the memory copy starts empty every time the app starts.
 - Keeping your selection after such a change no longer compares every selected photo with every photo in the library.
 
+### Maintenance
+
+- Removed checks for Android versions LumenCtrl can't be installed on (it needs Android 15): the "is this Android 14?" test before HDR preview and Ultra HDR, the Android 13 test before hiding the app in the recent-apps overview, and the Android 11 test before WebP export. Nothing changes on the phone.
+
 ## v0.1.3 (2026-11-20)
 
 Built and checked by CI only: nothing in this release had been run on a phone when it was published.

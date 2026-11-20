@@ -11,7 +11,6 @@ import android.net.Uri
 import android.opengl.EGL14
 import android.opengl.EGLConfig
 import android.opengl.GLES30 as GL
-import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
 import androidx.core.content.res.ResourcesCompat
@@ -206,9 +205,7 @@ object Exporter {
             val fmt = when (options.format) {
                 ExportFormat.JPEG -> Bitmap.CompressFormat.JPEG
                 ExportFormat.PNG -> Bitmap.CompressFormat.PNG
-                ExportFormat.WEBP -> if (Build.VERSION.SDK_INT >= 30) {
-                    if (options.quality >= 100) Bitmap.CompressFormat.WEBP_LOSSLESS else Bitmap.CompressFormat.WEBP_LOSSY
-                } else @Suppress("DEPRECATION") Bitmap.CompressFormat.WEBP
+                ExportFormat.WEBP -> if (options.quality >= 100) Bitmap.CompressFormat.WEBP_LOSSLESS else Bitmap.CompressFormat.WEBP_LOSSY
             }
             out.compress(fmt, options.quality.coerceIn(1, 100), stream)
         }

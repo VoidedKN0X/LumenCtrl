@@ -5,7 +5,6 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Gainmap
 import android.graphics.Matrix
-import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.exifinterface.media.ExifInterface
 import java.io.File
@@ -29,8 +28,8 @@ class SourceGain(
 )
 
 object Hdr {
-    /** Gain maps (read and write) need Android 14. */
-    val supported: Boolean get() = Build.VERSION.SDK_INT >= 34
+    /** Gain maps (read and write) need Android 14; LumenCtrl needs Android 15, so they are always there. */
+    val supported: Boolean get() = true
 
     private fun log2(v: Float) = (ln(max(v, 1e-6f).toDouble()) / ln(2.0)).toFloat()
 
@@ -123,12 +122,10 @@ object Hdr {
 
     /** Whether this screen can show HDR (Android 14+ reports an HDR/SDR ratio). */
     fun screenSupportsHdr(context: Context): Boolean {
-        if (Build.VERSION.SDK_INT < 34) return false
         return context.display?.isHdrSdrRatioAvailable == true
     }
 
     fun displayIsHdr(context: Context): Boolean {
-        if (Build.VERSION.SDK_INT < 34) return false
         @Suppress("DEPRECATION")
         return context.display?.isHdr == true
     }

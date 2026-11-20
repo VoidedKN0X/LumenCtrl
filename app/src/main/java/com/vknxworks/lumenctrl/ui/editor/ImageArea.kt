@@ -197,12 +197,10 @@ fun ImageArea(vm: LumenViewModel, st: EditorState, modifier: Modifier) {
     val hdrViewOn = st.hdrView && params[Param.HDR_ON] >= 0.5f && com.vknxworks.lumenctrl.render.Hdr.supported
     val activity = androidx.compose.ui.platform.LocalContext.current as? android.app.Activity
     DisposableEffect(hdrViewOn) {
-        if (android.os.Build.VERSION.SDK_INT >= 26) {
-            activity?.window?.colorMode = if (hdrViewOn && android.os.Build.VERSION.SDK_INT >= 34)
-                android.content.pm.ActivityInfo.COLOR_MODE_HDR else android.content.pm.ActivityInfo.COLOR_MODE_DEFAULT
-        }
+        activity?.window?.colorMode = if (hdrViewOn)
+            android.content.pm.ActivityInfo.COLOR_MODE_HDR else android.content.pm.ActivityInfo.COLOR_MODE_DEFAULT
         onDispose {
-            if (android.os.Build.VERSION.SDK_INT >= 26) activity?.window?.colorMode = android.content.pm.ActivityInfo.COLOR_MODE_DEFAULT
+            activity?.window?.colorMode = android.content.pm.ActivityInfo.COLOR_MODE_DEFAULT
         }
     }
     LaunchedEffect(hdrViewOn, params, size) {
