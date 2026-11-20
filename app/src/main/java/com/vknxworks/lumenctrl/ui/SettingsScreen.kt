@@ -123,7 +123,9 @@ fun SettingsScreen(vm: LumenViewModel) {
     }
 }
 
-const val LOCK_AUTHENTICATORS = BiometricManager.Authenticators.BIOMETRIC_WEAK or BiometricManager.Authenticators.DEVICE_CREDENTIAL
+// Strong (Class 3) biometrics only, like the other Ctrl apps. A phone whose only biometric is a
+// weaker one (most camera-only face unlock) falls back to the screen lock.
+const val LOCK_AUTHENTICATORS = BiometricManager.Authenticators.BIOMETRIC_STRONG or BiometricManager.Authenticators.DEVICE_CREDENTIAL
 
 @Composable
 private fun Section(title: String, content: @Composable () -> Unit) {

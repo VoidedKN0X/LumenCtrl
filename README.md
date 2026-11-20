@@ -110,7 +110,7 @@ See [Privacy](#privacy) for what happens to your data.
 
 Turn it on under **Settings > Privacy > App lock**. It's off until you turn it on.
 
-- Unlocks with your fingerprint, face or the phone's screen lock, through Android's own BiometricPrompt. LumenCtrl never sees or stores your PIN or biometrics.
+- Unlocks with your fingerprint, face or the phone's screen lock, through Android's own BiometricPrompt. Only biometrics Android classes as strong (Class 3) are accepted; with a weaker one, such as camera-only face unlock, the prompt asks for the screen lock. LumenCtrl never sees or stores your PIN or biometrics.
 - Your phone needs a screen lock first; Settings tells you when it doesn't have one.
 - The app locks again when you've been away from it for more than a minute.
 - Photos another app shares into LumenCtrl while it's locked are imported after you unlock.

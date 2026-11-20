@@ -15,6 +15,7 @@ Not released yet: these changes are built but have no version number. Nothing he
 ### Privacy
 
 - **Shared photos wait for the app lock.** When another app shared photos into LumenCtrl while the app lock was showing, they were imported straight away, behind the lock screen. They are now imported after you unlock. Without the app lock, or when the app is already unlocked, nothing changes.
+- **The app lock only accepts strong biometrics.** The lock used to accept any biometric Android offers, including weaker ones such as camera-only face unlock on many phones. It now accepts only what Android classes as strong (Class 3: fingerprint, and face unlock on phones with a secure face sensor), the same as the other Ctrl apps. The phone's screen lock (PIN, pattern or password) still works as before. If your phone's only biometric is a weaker one, the unlock prompt now asks for your screen lock instead.
 
 ### Maintenance
 
