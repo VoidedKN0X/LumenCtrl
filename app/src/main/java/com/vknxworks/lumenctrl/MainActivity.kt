@@ -30,6 +30,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.core.content.IntentCompat
@@ -88,7 +89,8 @@ class MainActivity : FragmentActivity() {
             Intent.ACTION_VIEW -> listOfNotNull(intent.data)
             else -> emptyList()
         }
-        if (uris.isNotEmpty()) vm.import(uris)
+        // With the app lock showing, the images wait and are imported after unlocking.
+        if (uris.isNotEmpty()) vm.importWhenUnlocked(uris)
     }
 
     private fun applyPrivacyFlags() {
@@ -104,11 +106,11 @@ class MainActivity : FragmentActivity() {
 
     private fun authenticate() {
         val prompt = BiometricPrompt(this, ContextCompat.getMainExecutor(this), object : BiometricPrompt.AuthenticationCallback() {
-            override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) { vm.unlocked = true }
+            override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) { vm.onUnlocked() }
         })
         prompt.authenticate(
             BiometricPrompt.PromptInfo.Builder()
-                .setTitle("Unlock LumenCtrl")
+                .setTitle(getString(R.string.unlock_title))
                 .setAllowedAuthenticators(LOCK_AUTHENTICATORS)
                 .build()
         )
@@ -123,6 +125,7 @@ private fun LumenApp(vm: LumenViewModel, onUnlock: () -> Unit) {
     LaunchedEffect(vm.message) {
         vm.message?.let { snackbar.showSnackbar(it); vm.consumeMessage() }
     }
+    val shareTitle = stringResource(R.string.share_title)
     LaunchedEffect(vm.shareRequest) {
         val uris = vm.shareRequest ?: return@LaunchedEffect
         vm.shareRequest = null
@@ -130,7 +133,7 @@ private fun LumenApp(vm: LumenViewModel, onUnlock: () -> Unit) {
         else Intent(Intent.ACTION_SEND_MULTIPLE).putParcelableArrayListExtra(Intent.EXTRA_STREAM, ArrayList(uris))
         send.type = "image/*"
         send.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        context.startActivity(Intent.createChooser(send, "Share"))
+        context.startActivity(Intent.createChooser(send, shareTitle))
     }
 
     if (!vm.unlocked && vm.settings.appLock) {

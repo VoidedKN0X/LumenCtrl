@@ -82,6 +82,8 @@ data class Version(val name: String, val createdAt: Long, val params: EditParams
 class Catalog(private val context: Context) {
     private val dir = File(context.filesDir, "library").apply { mkdirs() }
     private val albumsFile = File(dir, "albums.json")
+    /** Small copies of unedited photos for the library grid (cache only, see [ImageLoader.thumbDir]). */
+    private val thumbDir = File(context.cacheDir, "thumbs").also { ImageLoader.thumbDir = it }
 
     data class Photo(
         val id: String,
@@ -112,6 +114,11 @@ class Catalog(private val context: Context) {
     suspend fun photos(): List<Photo> = withContext(Dispatchers.IO) {
         dir.listFiles { f -> f.name.endsWith(".img") || f.name.endsWith(".vid") }.orEmpty().map { photo(it.nameWithoutExtension) }
             .onEach { p -> if (!p.edited && p.thumb.exists()) p.thumb.delete() } // stale: edit was reset while the app was killed
+            .also { list ->
+                // Cached small copies of photos that are no longer in the library must not stay behind.
+                val ids = list.mapTo(HashSet()) { it.id }
+                thumbDir.listFiles()?.forEach { f -> if (f.name.substringBefore('_') !in ids) f.delete() }
+            }
     }
 
     /** Returns the ids imported successfully. */
@@ -278,6 +285,7 @@ class Catalog(private val context: Context) {
             com.vknxworks.lumenctrl.edit.Denoiser.fileFor(photo.original),
         ).forEach { it.delete() }
         aiFiles(photo.id).forEach { it.delete() }
+        thumbDir.listFiles { f -> f.name.startsWith("${photo.id}_") }?.forEach { it.delete() }
     }
 
     // ---- AI mask images (<id>.ai-<maskId>.png, source-aligned grayscale) ----

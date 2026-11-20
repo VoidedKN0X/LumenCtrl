@@ -12,7 +12,6 @@ import android.hardware.usb.UsbDevice
 import android.hardware.usb.UsbManager
 import android.mtp.MtpConstants
 import android.mtp.MtpDevice
-import android.os.Build
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -72,7 +71,7 @@ class CameraImport(private val context: Context) {
             ContextCompat.registerReceiver(context, receiver, IntentFilter(action), ContextCompat.RECEIVER_NOT_EXPORTED)
             cont.invokeOnCancellation { runCatching { context.unregisterReceiver(receiver) } }
             // The system fills in extras, so the PendingIntent must be mutable; it is explicit to this app.
-            val flags = if (Build.VERSION.SDK_INT >= 31) PendingIntent.FLAG_MUTABLE else 0
+            val flags = PendingIntent.FLAG_MUTABLE
             val pi = PendingIntent.getBroadcast(context, 0, Intent(action).setPackage(context.packageName), flags)
             usb.requestPermission(d, pi)
         }

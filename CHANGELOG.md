@@ -4,6 +4,23 @@ What changed in each LumenCtrl release. Every release on the [Releases page](htt
 
 To publish a new version: bump `versionCode` and `versionName` in `app/build.gradle.kts`, add a section here, and push to `main`. Pushes without a version bump only build; they don't make a release.
 
+## Unreleased
+
+Not released yet: these changes are built but have no version number. Nothing here was tested on a phone. Editing, export and the files in your library are unchanged.
+
+### Performance
+
+- **The library opens faster after a restart.** Photos you haven't edited had no stored thumbnail, so the grid decoded every full-size original again each time the app started. LumenCtrl now keeps a small copy (384 px) of each unedited photo in its private cache and shows that. The copies are made the first time a photo appears in the grid, are removed when you delete the photo, and are simply made again if Android empties the cache. Photos with transparency or an Ultra HDR gain map, and videos, are still read from the original so they look exactly as before. Your originals and edits are not touched and nothing in the library folder changes.
+
+### Privacy
+
+- **Shared photos wait for the app lock.** When another app shared photos into LumenCtrl while the app lock was showing, they were imported straight away, behind the lock screen. They are now imported after you unlock. Without the app lock, or when the app is already unlocked, nothing changes.
+
+### Maintenance
+
+- The app name, the share sheet title, the unlock prompt title and the screen-reader labels of the collage and HDR previews moved from the code into the app's text resources. The words are the same. (Most other text in LumenCtrl is still written in the code.)
+- Removed a check for Android versions older than 12 in USB camera import; LumenCtrl needs Android 15.
+
 ## v0.1.1 (2026-11-13)
 
 A security and privacy update. Editing, import and export work as before.

@@ -70,6 +70,21 @@ class LumenViewModel(app: Application) : AndroidViewModel(app) {
         if (settings.appLock && stoppedAt > 0 && System.currentTimeMillis() - stoppedAt > 60_000) unlocked = false
     }
 
+    /** Images shared in while the app lock was showing; they are imported once it's unlocked. */
+    private var pendingShare: List<Uri> = emptyList()
+
+    /** Imports shared images, or keeps them until the app lock is unlocked. */
+    fun importWhenUnlocked(uris: List<Uri>) {
+        if (settings.appLock && !unlocked) pendingShare = pendingShare + uris else this.import(uris)
+    }
+
+    fun onUnlocked() {
+        unlocked = true
+        val waiting = pendingShare
+        pendingShare = emptyList()
+        this.import(waiting)
+    }
+
     // ---- Library ----
     var allPhotos by mutableStateOf<List<Catalog.Photo>>(emptyList()); private set
     var albums by mutableStateOf<List<Album>>(emptyList()); private set

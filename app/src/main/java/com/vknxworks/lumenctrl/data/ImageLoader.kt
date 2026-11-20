@@ -14,6 +14,37 @@ import kotlin.math.roundToInt
 object ImageLoader {
     private val thumbCache = LruCache<String, ImageBitmap>(150)
 
+    /**
+     * Folder for small copies of unedited photos, so the library grid doesn't decode every full-size original
+     * again after each start. It's in the app's private cache: Android may empty it, and the copies are simply
+     * made again. Set by [Catalog], which also removes a photo's copy when the photo is deleted.
+     */
+    @Volatile var thumbDir: File? = null
+
+    /** The stored small copy of [photo]'s original (named by id and the original's modified time). */
+    private fun storedThumb(photo: Catalog.Photo): File? =
+        thumbDir?.let { File(it, "${photo.id}_${photo.original.lastModified()}.jpg") }
+
+    private fun readStoredThumb(photo: Catalog.Photo): Bitmap? {
+        val f = storedThumb(photo) ?: return null
+        if (!f.exists()) return null
+        return runCatching {
+            BitmapFactory.decodeFile(f.path, BitmapFactory.Options().apply { inPreferredConfig = Bitmap.Config.ARGB_8888 })
+        }.getOrNull()
+    }
+
+    /** Photos with transparency or an Ultra HDR gain map are left out, so they look the same as before. */
+    private fun writeStoredThumb(photo: Catalog.Photo, bmp: Bitmap) {
+        if (bmp.hasAlpha() || bmp.hasGainmap()) return
+        val f = storedThumb(photo) ?: return
+        runCatching {
+            f.parentFile?.mkdirs()
+            val tmp = File(f.path + ".tmp")
+            tmp.outputStream().use { bmp.compress(Bitmap.CompressFormat.JPEG, 90, it) }
+            if (!tmp.renameTo(f)) tmp.delete()
+        }
+    }
+
     /** Decodes [file] so its long edge is at most [maxDim], upright per EXIF, in ARGB_8888. */
     fun decode(file: File, maxDim: Int): Bitmap {
         val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
@@ -58,7 +89,7 @@ object ImageLoader {
             when {
                 edited -> decode(photo.thumb, 384)
                 photo.isVideo -> videoFrame(photo.original, 1000, 384, photo.meta.width, photo.meta.height)!!
-                else -> decode(photo.original, 384)
+                else -> readStoredThumb(photo) ?: decode(photo.original, 384).also { writeStoredThumb(photo, it) }
             }.asImageBitmap()
         }.getOrNull()?.also { thumbCache.put(key, it) }
     }

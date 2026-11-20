@@ -215,7 +215,7 @@ fun ImageArea(vm: LumenViewModel, st: EditorState, modifier: Modifier) {
         GlCanvas(bmp, params, options, if (showHistogram) { h -> vm.histogram = h } else null, atlas, vm.sourceGain, vm.denoised, Modifier.fillMaxSize())
         if (hdrViewOn) vm.hdrPreview?.let { hdr ->
             androidx.compose.foundation.Image(
-                hdr.asImageBitmap(), "HDR preview",
+                hdr.asImageBitmap(), androidx.compose.ui.res.stringResource(com.vknxworks.lumenctrl.R.string.hdr_preview),
                 contentScale = androidx.compose.ui.layout.ContentScale.Fit,
                 modifier = Modifier.fillMaxSize().background(c.bg),
             )

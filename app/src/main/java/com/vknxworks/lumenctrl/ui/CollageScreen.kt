@@ -145,7 +145,7 @@ fun CollageScreen(vm: LumenViewModel) {
         Box(Modifier.weight(1f).fillMaxWidth().padding(20.dp), contentAlignment = Alignment.Center) {
             val p = preview
             if (p == null) CircularProgressIndicator(color = c.accent, strokeWidth = 2.dp)
-            else Image(p.asImageBitmap(), "Collage preview", contentScale = ContentScale.Fit, modifier = Modifier.fillMaxSize())
+            else Image(p.asImageBitmap(), androidx.compose.ui.res.stringResource(com.vknxworks.lumenctrl.R.string.collage_preview), contentScale = ContentScale.Fit, modifier = Modifier.fillMaxSize())
         }
         Column(Modifier.padding(horizontal = 20.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             MonoLabel("Layout")

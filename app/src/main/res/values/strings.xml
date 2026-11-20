@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name" translatable="false">LumenCtrl</string>
+    <!-- Title of Android's share sheet when exporting to another app. -->
+    <string name="share_title">Share</string>
+    <!-- Title of Android's unlock prompt for the app lock. -->
+    <string name="unlock_title">Unlock LumenCtrl</string>
+    <!-- Read out by screen readers. -->
+    <string name="collage_preview">Collage preview</string>
+    <string name="hdr_preview">HDR preview</string>
+</resources>
