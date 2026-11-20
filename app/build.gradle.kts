@@ -1,6 +1,5 @@
 plugins {
     id("com.android.application")
-    id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose")
 }
 
@@ -18,7 +17,7 @@ val unsignedRelease: Boolean = System.getenv("UNSIGNED_RELEASE") == "true"
 
 android {
     namespace = "com.vknxworks.lumenctrl"
-    compileSdk = 35
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.vknxworks.lumenctrl"
@@ -67,7 +66,6 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    kotlinOptions { jvmTarget = "17" }
     buildFeatures { compose = true }
     // Models are memory-mapped straight from the APK, so they must stay uncompressed.
     androidResources { noCompress += "tflite" }
@@ -88,6 +86,8 @@ android {
     }
 }
 
+kotlin { jvmToolchain(17) }
+
 // Google-free: no Google services or SDKs may reach the APK. AndroidX pulls Guava's
 // one-interface listenablefuture jar, and profileinstaller (not needed for an offline app)
 // pulls concurrent-futures. The one Google-made library kept on purpose is LiteRT, the
@@ -99,17 +99,17 @@ configurations.configureEach {
 }
 
 dependencies {
-    val composeBom = platform("androidx.compose:compose-bom:2024.10.01")
+    val composeBom = platform("androidx.compose:compose-bom:2026.09.00")
     implementation(composeBom)
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.foundation:foundation")
     implementation("androidx.compose.material3:material3")
-    implementation("androidx.compose.material:material-icons-extended")
-    implementation("androidx.activity:activity-compose:1.9.3")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
-    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.7")
-    implementation("androidx.core:core-ktx:1.15.0")
-    implementation("androidx.exifinterface:exifinterface:1.3.7")
+    implementation("androidx.compose.material:material-icons-extended:1.7.8")
+    implementation("androidx.activity:activity-compose:1.13.0")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.10.0")
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.10.0")
+    implementation("androidx.core:core-ktx:1.18.0")
+    implementation("androidx.exifinterface:exifinterface:1.4.1")
     // App lock. Runs entirely on-device through Android's BiometricPrompt.
     implementation("androidx.biometric:biometric:1.1.0")
     // On-device inference for AI masks and AI Denoise: LiteRT (TensorFlow Lite's successor),

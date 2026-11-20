@@ -25,6 +25,13 @@ Text the user sees lives in `res/values/strings.xml` and is read with `tr(R.stri
 - Models in `assets/models/` stay uncompressed (`noCompress "tflite"`) and are memory-mapped; record source, licence and sha256 of any new model in the README.
 - Names and data from outside (shared files, USB cameras) never pick a path on the phone: files are named by LumenCtrl itself. Thumbnails and images from devices are decoded with a size check first.
 
+## Build toolchain
+
+- AGP 9.5.1, Gradle 9.9.2, Kotlin 2.4.21, Compose BOM 2026.09.00, `compileSdk` 37 (Compose 1.12 needs it), `minSdk` 35, `targetSdk` 35 (on purpose: raising it changes how Android treats the app). There is no version catalog: versions are written in `build.gradle.kts` and `app/build.gradle.kts`.
+- AGP 9 has built-in Kotlin: there is no `org.jetbrains.kotlin.android` plugin and no `kotlinOptions` block any more. The Kotlin version is pinned by the `kotlin-gradle-plugin` classpath entry in the root `build.gradle.kts`; the Compose compiler plugin uses the same version. Don't re-add the Kotlin Android plugin.
+- AGP 9's R8 is stricter (`-keep class X` without a member block no longer keeps the constructor; resources are shrunk together with code). Keep rules in `proguard-rules.pro` must name the members they need, and resources must be referenced through `R`, never by name.
+- Any change here needs the dependency verification procedure below.
+
 ## Dependency verification
 
 Gradle checks every library and plugin download against the sha256 checksums in `gradle/verification-metadata.xml` (checksums only, no PGP). When a dependency, plugin or the Gradle version changes, regenerate it with the `verification-metadata.yml` workflow (`gh api -X POST repos/VoidedKN0X/LumenCtrl/actions/workflows/verification-metadata.yml/dispatches -f ref=main`): take the file from its log (between the BEGIN/END markers, `base64 -d | gunzip`), check the diff lists only Maven Central and Google's Maven, and commit it. Generate it on CI, not on Windows (aapt2 is a per-OS download). Never turn verification off or make it lenient.
