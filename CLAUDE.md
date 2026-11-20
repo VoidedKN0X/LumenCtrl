@@ -27,7 +27,17 @@ Text the user sees lives in `res/values/strings.xml` and is read with `tr(R.stri
 
 ## Dependency verification
 
-Gradle checks every library and plugin download against the sha256 checksums in `gradle/verification-metadata.xml` (checksums only, no PGP). When a dependency, plugin or the Gradle version changes, regenerate it with the `verification-metadata.yml` workflow (`gh api -X POST repos/VoidedKN0X/LumenCtrl/actions/workflows/verification-metadata.yml/dispatches -f ref=main`): take the file from its log (between the BEGIN/END markers, `base64 -d | gunzip`), check the diff lists only Maven Central, Google's Maven and the Gradle plugin portal, and commit it. Generate it on CI, not on Windows (aapt2 is a per-OS download). Never turn verification off or make it lenient.
+Gradle checks every library and plugin download against the sha256 checksums in `gradle/verification-metadata.xml` (checksums only, no PGP). When a dependency, plugin or the Gradle version changes, regenerate it with the `verification-metadata.yml` workflow (`gh api -X POST repos/VoidedKN0X/LumenCtrl/actions/workflows/verification-metadata.yml/dispatches -f ref=main`): take the file from its log (between the BEGIN/END markers, `base64 -d | gunzip`), check the diff lists only Maven Central and Google's Maven, and commit it. Generate it on CI, not on Windows (aapt2 is a per-OS download). Never turn verification off or make it lenient.
+
+`settings.gradle.kts` lists only `google()` and `mavenCentral()` for plugins, not `gradlePluginPortal()`: the portal serves different files for the Kotlin plugin markers, which made verification fail whenever Maven Central had a hiccup. Don't add it back unfiltered (see the comment in that file).
+
+## Build and signing (CI)
+
+`.github/workflows/build.yml` has four jobs: `version` (is this a release?), `build` (Gradle, **no secrets**, `UNSIGNED_RELEASE=true` gives `app-release-unsigned.apk`; runs every check), `sign` (no checkout, no Gradle: `zipalign` + `apksigner` with the release key, then checks the signer against `EXPECTED_CERT_SHA256` and that the APK's contents didn't change) and `release` (attestation, release notes, publish).
+
+- Never give the `build` job a secret, and never run Gradle or check out the repo in `sign`. New build checks (tests, lint, APK checks) go in `build`.
+- `EXPECTED_CERT_SHA256` in `build.yml` must match the fingerprint in `SECURITY.md` and `README.md`; the build fails if it doesn't.
+- No Gradle cache in any workflow (`cache-disabled: true`): a cache saved by a failed run used to break every later build.
 
 ## Releasing
 

@@ -34,6 +34,9 @@ jobs:
           java-version: "17"
 
       - uses: gradle/actions/setup-gradle@ed408507eac070d1f99cc633dbcf757c94c7933a # v4
+        with:
+          # No Gradle cache, like the build workflow (see the note there).
+          cache-disabled: true
 
       - uses: github/codeql-action/init@f3bbb05694c2f74569081c28664c0866d64dec21 # v4.39.3
         with:
