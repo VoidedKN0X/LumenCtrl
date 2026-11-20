@@ -1,5 +1,7 @@
 package com.vknxworks.lumenctrl.ui.editor
 
+import com.vknxworks.lumenctrl.R
+import com.vknxworks.lumenctrl.tr
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -55,7 +57,7 @@ import com.vknxworks.lumenctrl.ui.ctrl.CtrlNavPill
 import com.vknxworks.lumenctrl.ui.ctrl.MonoLabel
 import com.vknxworks.lumenctrl.ui.ctrl.NavItem
 
-enum class Tool(val label: String) { PRESETS("Presets"), EDIT("Edit"), MASKS("Masks"), HEAL("Heal"), CROP("Crop") }
+enum class Tool(val label: String) { PRESETS(tr(R.string.presets)), EDIT(tr(R.string.edit)), MASKS(tr(R.string.masks)), HEAL(tr(R.string.heal)), CROP(tr(R.string.crop)) }
 
 enum class Sheet { EXPORT, VERSIONS, HISTORY, INFO }
 
@@ -134,27 +136,27 @@ private fun TopBar(vm: LumenViewModel, st: EditorState) {
         Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        CtrlIconButton(Icons.AutoMirrored.Outlined.ArrowBack, "Back to library", vm::close)
+        CtrlIconButton(Icons.AutoMirrored.Outlined.ArrowBack, tr(R.string.back_to_library), vm::close)
         Spacer(Modifier.size(10.dp))
         MonoLabel(vm.openPhoto?.meta?.name?.take(18) ?: "", Modifier.weight(1f))
         Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
             val ghost = CtrlButtonStyle.Ghost
-            CtrlIconButton(Icons.AutoMirrored.Outlined.Undo, "Undo", vm::undo, style = ghost, enabled = vm.canUndo, size = 40)
-            CtrlIconButton(Icons.AutoMirrored.Outlined.Redo, "Redo", vm::redo, style = ghost, enabled = vm.canRedo, size = 40)
+            CtrlIconButton(Icons.AutoMirrored.Outlined.Undo, tr(R.string.undo), vm::undo, style = ghost, enabled = vm.canUndo, size = 40)
+            CtrlIconButton(Icons.AutoMirrored.Outlined.Redo, tr(R.string.redo), vm::redo, style = ghost, enabled = vm.canRedo, size = 40)
             Box {
-                CtrlIconButton(Icons.Outlined.MoreVert, "More actions", { menu = true }, style = ghost, size = 40)
+                CtrlIconButton(Icons.Outlined.MoreVert, tr(R.string.more_actions), { menu = true }, style = ghost, size = 40)
                 CtrlMenu(menu, { menu = false }) {
-                    CtrlMenuItem("Copy settings", Icons.Outlined.ContentCopy) { vm.copySettings(); menu = false }
-                    CtrlMenuItem("Paste settings", Icons.Outlined.ContentPaste, enabled = vm.clipboard != null) { vm.pasteSettings(); menu = false }
-                    CtrlMenuItem("Versions", Icons.Outlined.ViewTimeline) { st.sheet = Sheet.VERSIONS; menu = false }
-                    CtrlMenuItem("History", Icons.Outlined.History) { st.sheet = Sheet.HISTORY; menu = false }
-                    CtrlMenuItem("Info", Icons.Outlined.Info) { st.sheet = Sheet.INFO; menu = false }
-                    CtrlMenuItem("Reset all", Icons.Outlined.RestartAlt) { vm.edit("Reset all") { EditParams() }; menu = false }
+                    CtrlMenuItem(tr(R.string.copy_settings), Icons.Outlined.ContentCopy) { vm.copySettings(); menu = false }
+                    CtrlMenuItem(tr(R.string.paste_settings), Icons.Outlined.ContentPaste, enabled = vm.clipboard != null) { vm.pasteSettings(); menu = false }
+                    CtrlMenuItem(tr(R.string.versions), Icons.Outlined.ViewTimeline) { st.sheet = Sheet.VERSIONS; menu = false }
+                    CtrlMenuItem(tr(R.string.history), Icons.Outlined.History) { st.sheet = Sheet.HISTORY; menu = false }
+                    CtrlMenuItem(tr(R.string.info), Icons.Outlined.Info) { st.sheet = Sheet.INFO; menu = false }
+                    CtrlMenuItem(tr(R.string.reset_all), Icons.Outlined.RestartAlt) { vm.edit(tr(R.string.reset_all)) { EditParams() }; menu = false }
                 }
             }
         }
         Spacer(Modifier.size(8.dp))
-        CtrlIconButton(Icons.Outlined.Download, "Export or share", { st.sheet = Sheet.EXPORT }, style = CtrlButtonStyle.Accent, enabled = vm.preview != null)
+        CtrlIconButton(Icons.Outlined.Download, tr(R.string.export_or_share), { st.sheet = Sheet.EXPORT }, style = CtrlButtonStyle.Accent, enabled = vm.preview != null)
     }
 }
 

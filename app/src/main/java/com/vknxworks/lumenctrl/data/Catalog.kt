@@ -1,5 +1,7 @@
 package com.vknxworks.lumenctrl.data
 
+import com.vknxworks.lumenctrl.R
+import com.vknxworks.lumenctrl.tr
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -123,7 +125,7 @@ class Catalog(private val context: Context) {
                     ?.also { metaCache[id] = it }
         }
         val meta = known
-            ?: PhotoMeta(name = "Photo", importedAt = img.lastModified(), bytes = img.length())
+            ?: PhotoMeta(name = tr(R.string.photo), importedAt = img.lastModified(), bytes = img.length())
         return Photo(id, img, sidecar, File(dir, "${id}_thumb.jpg"), sidecar.exists(), meta)
     }
 
@@ -185,7 +187,7 @@ class Catalog(private val context: Context) {
         context.contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use {
             if (it.moveToFirst()) it.getString(0) else null
         }
-    }.getOrNull() ?: uri.lastPathSegment?.substringAfterLast('/') ?: "Photo"
+    }.getOrNull() ?: uri.lastPathSegment?.substringAfterLast('/') ?: tr(R.string.photo)
 
     private fun readMeta(file: File, name: String): PhotoMeta {
         val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
@@ -292,7 +294,7 @@ class Catalog(private val context: Context) {
         atomicWrite(albumsFile, JSONArray().apply { list.forEach { put(JSONObject().put("id", it.id).put("name", it.name)) } }.toString())
 
     suspend fun createAlbum(name: String): Album = withContext(Dispatchers.IO) {
-        Album(UUID.randomUUID().toString(), name.trim().ifBlank { "Album" }).also { writeAlbums(albums() + it) }
+        Album(UUID.randomUUID().toString(), name.trim().ifBlank { tr(R.string.album) }).also { writeAlbums(albums() + it) }
     }
 
     suspend fun renameAlbum(id: String, name: String) = withContext(Dispatchers.IO) {

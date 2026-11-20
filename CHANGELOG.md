@@ -15,6 +15,7 @@ Built and checked by CI only: nothing here had been run on a phone when it was w
 
 ### Maintenance
 
+- **The app's text moved out of the code.** The words on the screens, in menus, messages, the edit history and screen-reader labels (some 440 pieces of text: slider and section names, filter and sort names, buttons, hints, error messages) were written straight into the code; they now live in the app's text resources (`strings.xml`), where they can be reviewed and, later, translated. The wording is the same, character for character, and numbers inside a sentence ("Imported 3 of 5") are filled in the same way as before. Left in the code on purpose: the names of the presets (they are stored in your edits), number and unit formats such as "+0.50 EV", file and folder names, the "Lumen" and "CTRL" marks, and five lines that mix text with a number format (the library size in Settings, the photo size and file size in Info, the "Ultra HDR source" line and the AI Denoise progress line).
 - Removed checks for Android versions LumenCtrl can't be installed on (it needs Android 15): the "is this Android 14?" test before HDR preview and Ultra HDR, the Android 13 test before hiding the app in the recent-apps overview, and the Android 11 test before WebP export. Nothing changes on the phone.
 
 ## v0.1.3 (2026-11-20)

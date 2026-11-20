@@ -1,5 +1,7 @@
 package com.vknxworks.lumenctrl.data
 
+import com.vknxworks.lumenctrl.R
+import com.vknxworks.lumenctrl.tr
 import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -52,7 +54,7 @@ class CameraImport(private val context: Context) {
     }
 
     fun label(d: UsbDevice): String =
-        listOfNotNull(d.manufacturerName, d.productName).joinToString(" ").ifBlank { "USB camera" }
+        listOfNotNull(d.manufacturerName, d.productName).joinToString(" ").ifBlank { tr(R.string.usb_camera) }
 
     fun hasPermission(d: UsbDevice) = usb.hasPermission(d)
 

@@ -54,6 +54,8 @@ class MainActivity : FragmentActivity() {
     private val vm: LumenViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Before anything else: the view model, the screens and the model classes take their text from here.
+        AppStrings.init(this)
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         applyPrivacyFlags()
@@ -172,9 +174,9 @@ private fun LockScreen(onUnlock: () -> Unit) {
     Box(Modifier.fillMaxSize().background(c.bg), contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(18.dp)) {
             Wordmark("Lumen")
-            Text("Locked", style = CtrlType.display, color = c.text)
-            MonoLabel("Your library stays private")
-            CtrlButton("Unlock", onClick = onUnlock, icon = Icons.Outlined.Lock, style = CtrlButtonStyle.Accent)
+            Text(tr(R.string.locked), style = CtrlType.display, color = c.text)
+            MonoLabel(tr(R.string.your_library_stays_private))
+            CtrlButton(tr(R.string.unlock), onClick = onUnlock, icon = Icons.Outlined.Lock, style = CtrlButtonStyle.Accent)
         }
     }
 }

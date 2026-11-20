@@ -1,5 +1,7 @@
 package com.vknxworks.lumenctrl.edit
 
+import com.vknxworks.lumenctrl.R
+import com.vknxworks.lumenctrl.tr
 import android.graphics.Bitmap
 import androidx.exifinterface.media.ExifInterface
 import com.vknxworks.lumenctrl.data.ImageLoader
@@ -29,7 +31,7 @@ object HdrMerge {
     private val LIN = FloatArray(256) { (it / 255f).pow(2.2f) }
 
     fun merge(files: List<File>, maxDim: Int = 2560): Result {
-        require(files.size in 2..7) { "Select 2 to 7 exposures" }
+        require(files.size in 2..7) { tr(R.string.select_2_to_7_exposures) }
         val frames = files.map { ImageLoader.decode(it, maxDim) }
         val w = frames[0].width; val h = frames[0].height
         val imgs = frames.map { if (it.width == w && it.height == h) it else Bitmap.createScaledBitmap(it, w, h, true) }

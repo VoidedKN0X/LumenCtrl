@@ -1,5 +1,7 @@
 package com.vknxworks.lumenctrl.ui.editor
 
+import com.vknxworks.lumenctrl.R
+import com.vknxworks.lumenctrl.tr
 import android.graphics.Bitmap
 import android.opengl.GLSurfaceView
 import android.os.Handler
@@ -234,7 +236,7 @@ fun ImageArea(vm: LumenViewModel, st: EditorState, modifier: Modifier) {
                     val (u, v) = m.toSource(pos.x, pos.y)
                     if (u !in 0f..1f || v !in 0f..1f) return@detectTapGestures
                     if (st.pickWhiteBalance) { vm.pickWhiteBalance(u, v); st.pickWhiteBalance = false }
-                    else { vm.edit("Blur focus") { it.with(Param.BLUR_FOCUS_X, u).with(Param.BLUR_FOCUS_Y, v) }; st.pickFocus = false }
+                    else { vm.edit(tr(R.string.blur_focus)) { it.with(Param.BLUR_FOCUS_X, u).with(Param.BLUR_FOCUS_Y, v) }; st.pickFocus = false }
                 }
             }
             zoomable -> Modifier
@@ -288,7 +290,7 @@ fun ImageArea(vm: LumenViewModel, st: EditorState, modifier: Modifier) {
                         val p = currentParams
                         val fr = lockRatio(AspectLock.of(p.cropAspect), Geometry.frameAspect(p, bmp.width, bmp.height))
                         val next = dragCrop(p.crop, handle, drag.x / m.w, drag.y / m.h, fr)
-                        vm.setLiveParams(p.copy(crop = next), "Crop")
+                        vm.setLiveParams(p.copy(crop = next), tr(R.string.crop))
                     },
                     onDragEnd = { cropHandle = null; vm.commit() },
                     onDragCancel = { cropHandle = null; vm.commit() },
@@ -308,7 +310,7 @@ fun ImageArea(vm: LumenViewModel, st: EditorState, modifier: Modifier) {
                             MaskType.RADIAL -> mask.copy(x1 = u, y1 = v)
                             MaskType.LINEAR, MaskType.AI -> return@detectTapGestures
                         }
-                        vm.edit("Mask") { it.copy(masks = it.masks.toMutableList().also { l -> l[i] = updated }) }
+                        vm.edit(tr(R.string.mask)) { it.copy(masks = it.masks.toMutableList().also { l -> l[i] = updated }) }
                     }
                 }
                 .pointerInput(Unit) {
@@ -345,7 +347,7 @@ fun ImageArea(vm: LumenViewModel, st: EditorState, modifier: Modifier) {
                                 }
                                 else -> mask
                             }
-                            vm.setLiveParams(p.copy(masks = p.masks.toMutableList().also { it[i] = next }), "Move mask")
+                            vm.setLiveParams(p.copy(masks = p.masks.toMutableList().also { it[i] = next }), tr(R.string.move_mask))
                         },
                         onDragEnd = { if (dragIndex >= 0) vm.commit(); dragIndex = -1 },
                         onDragCancel = { if (dragIndex >= 0) vm.commit(); dragIndex = -1 },
@@ -393,7 +395,7 @@ fun ImageArea(vm: LumenViewModel, st: EditorState, modifier: Modifier) {
                             val s = p.spots.getOrNull(i) ?: return@detectDragGestures
                             val (u, v) = m.toSource(change.position.x, change.position.y)
                             val next = if (dragIndex % 2 == 0) s.copy(tx = u, ty = v) else s.copy(sx = u, sy = v)
-                            vm.setLiveParams(p.copy(spots = p.spots.toMutableList().also { it[i] = next }), "Move spot")
+                            vm.setLiveParams(p.copy(spots = p.spots.toMutableList().also { it[i] = next }), tr(R.string.move_spot))
                         },
                         onDragEnd = { if (dragIndex >= 0) vm.commit(); dragIndex = -1 },
                         onDragCancel = { if (dragIndex >= 0) vm.commit(); dragIndex = -1 },
@@ -448,12 +450,12 @@ fun ImageArea(vm: LumenViewModel, st: EditorState, modifier: Modifier) {
         if (showHistogram) vm.histogram?.let { HistogramView(it, Modifier.align(Alignment.TopStart).padding(12.dp)) }
 
         val hint = when {
-            st.pickWhiteBalance -> "Tap something neutral gray"
-            st.pickFocus -> "Tap the point to keep sharp"
-            st.tool == Tool.HEAL && params.spots.isEmpty() -> "Tap a blemish to heal it"
-            st.tool == Tool.MASKS && params.masks.getOrNull(st.selectedMask)?.type == MaskType.LUMA -> "Tap to pick a brightness range"
-            st.tool == Tool.MASKS && params.masks.getOrNull(st.selectedMask)?.type == MaskType.COLOR -> "Tap to pick a color"
-            st.showBefore -> "Before · original"
+            st.pickWhiteBalance -> tr(R.string.tap_something_neutral_gray)
+            st.pickFocus -> tr(R.string.tap_the_point_to_keep_sharp)
+            st.tool == Tool.HEAL && params.spots.isEmpty() -> tr(R.string.tap_a_blemish_to_heal_it)
+            st.tool == Tool.MASKS && params.masks.getOrNull(st.selectedMask)?.type == MaskType.LUMA -> tr(R.string.tap_to_pick_a_brightness_range)
+            st.tool == Tool.MASKS && params.masks.getOrNull(st.selectedMask)?.type == MaskType.COLOR -> tr(R.string.tap_to_pick_a_color)
+            st.showBefore -> tr(R.string.before_original)
             else -> null
         }
         hint?.let {
@@ -473,7 +475,7 @@ fun ImageArea(vm: LumenViewModel, st: EditorState, modifier: Modifier) {
                 .size(44.dp)
                 .semantics {
                     role = Role.Button
-                    contentDescription = "Hold to compare with original"
+                    contentDescription = tr(R.string.hold_to_compare_with_original)
                     onClick { false }
                 }
                 .pointerInput(Unit) {

@@ -1,5 +1,7 @@
 package com.vknxworks.lumenctrl.edit
 
+import com.vknxworks.lumenctrl.R
+import com.vknxworks.lumenctrl.tr
 import android.content.Context
 import android.graphics.Bitmap
 import com.vknxworks.lumenctrl.model.AiKind
@@ -25,7 +27,7 @@ import kotlin.math.sqrt
  * Nothing here touches the network; the app has no internet permission.
  */
 object Segmenter {
-    class NothingFound(val kind: AiKind) : Exception("No ${kind.label.lowercase()} found in this photo")
+    class NothingFound(val kind: AiKind) : Exception(tr(R.string.no_x_found_in_this_photo, kind.label.lowercase()))
 
     /** PASCAL VOC classes treated as a primary subject: animals, people, vehicles. */
     private val PRIMARY = setOf(1, 2, 3, 4, 6, 7, 8, 10, 12, 13, 14, 15, 17, 19)

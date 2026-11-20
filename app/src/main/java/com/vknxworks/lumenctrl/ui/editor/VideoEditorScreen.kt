@@ -1,5 +1,7 @@
 package com.vknxworks.lumenctrl.ui.editor
 
+import com.vknxworks.lumenctrl.R
+import com.vknxworks.lumenctrl.tr
 import android.graphics.Bitmap
 import android.media.MediaPlayer
 import android.media.PlaybackParams
@@ -86,10 +88,10 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 
 private val videoTools = listOf(
-    NavItem("Presets", Icons.Outlined.AutoAwesome),
-    NavItem("Edit", Icons.Outlined.Tune),
-    NavItem("Crop", Icons.Outlined.Crop),
-    NavItem("Video", Icons.Outlined.Movie),
+    NavItem(tr(R.string.presets), Icons.Outlined.AutoAwesome),
+    NavItem(tr(R.string.edit), Icons.Outlined.Tune),
+    NavItem(tr(R.string.crop), Icons.Outlined.Crop),
+    NavItem(tr(R.string.video), Icons.Outlined.Movie),
 )
 
 private fun fmt(ms: Long): String {
@@ -131,13 +133,13 @@ fun VideoEditorScreen(vm: LumenViewModel) {
 
     Column(Modifier.fillMaxSize().background(c.bg).systemBarsPadding()) {
         Row(Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-            CtrlIconButton(Icons.AutoMirrored.Outlined.ArrowBack, "Back to library", { player?.pause(); vm.close() })
+            CtrlIconButton(Icons.AutoMirrored.Outlined.ArrowBack, tr(R.string.back_to_library), { player?.pause(); vm.close() })
             Spacer(Modifier.size(10.dp))
-            MonoLabel("Video · ${fmt(trimEnd - v.trimStartMs)}", Modifier.weight(1f))
-            CtrlIconButton(Icons.AutoMirrored.Outlined.Undo, "Undo", vm::undo, style = CtrlButtonStyle.Ghost, enabled = vm.canUndo, size = 40)
-            CtrlIconButton(Icons.AutoMirrored.Outlined.Redo, "Redo", vm::redo, style = CtrlButtonStyle.Ghost, enabled = vm.canRedo, size = 40)
+            MonoLabel(tr(R.string.video_x, fmt(trimEnd - v.trimStartMs)), Modifier.weight(1f))
+            CtrlIconButton(Icons.AutoMirrored.Outlined.Undo, tr(R.string.undo), vm::undo, style = CtrlButtonStyle.Ghost, enabled = vm.canUndo, size = 40)
+            CtrlIconButton(Icons.AutoMirrored.Outlined.Redo, tr(R.string.redo), vm::redo, style = CtrlButtonStyle.Ghost, enabled = vm.canRedo, size = 40)
             Spacer(Modifier.size(8.dp))
-            CtrlIconButton(Icons.Outlined.Download, "Export video", { player?.pause(); playing = false; showExport = true }, style = CtrlButtonStyle.Accent)
+            CtrlIconButton(Icons.Outlined.Download, tr(R.string.export_video), { player?.pause(); playing = false; showExport = true }, style = CtrlButtonStyle.Accent)
         }
 
         Box(Modifier.weight(1f).fillMaxWidth().padding(top = 8.dp)) {
@@ -159,7 +161,7 @@ fun VideoEditorScreen(vm: LumenViewModel) {
                 modifier = Modifier.align(Alignment.BottomCenter).padding(12.dp).size(56.dp),
             ) {
                 Box(contentAlignment = Alignment.Center) {
-                    androidx.compose.material3.Icon(if (playing) Icons.Outlined.Pause else Icons.Outlined.PlayArrow, if (playing) "Pause" else "Play", tint = c.onAccent)
+                    androidx.compose.material3.Icon(if (playing) Icons.Outlined.Pause else Icons.Outlined.PlayArrow, if (playing) tr(R.string.pause) else tr(R.string.play), tint = c.onAccent)
                 }
             }
         }
@@ -191,21 +193,21 @@ private fun VideoPanel(vm: LumenViewModel, hasAudio: Boolean, duration: Long) {
     val v = vm.params.video
     Column(Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            MonoLabel("Trim ${fmt(v.trimStartMs)} – ${fmt(v.end(duration))}", Modifier.weight(1f))
-            CtrlButton("Reset trim", onClick = { vm.edit("Reset trim") { it.copy(video = it.video.copy(trimStartMs = 0, trimEndMs = -1)) } }, style = CtrlButtonStyle.Ghost)
+            MonoLabel(tr(R.string.trim_x_x, fmt(v.trimStartMs), fmt(v.end(duration))), Modifier.weight(1f))
+            CtrlButton(tr(R.string.reset_trim), onClick = { vm.edit(tr(R.string.reset_trim)) { it.copy(video = it.video.copy(trimStartMs = 0, trimEndMs = -1)) } }, style = CtrlButtonStyle.Ghost)
         }
         if (hasAudio) {
-            CtrlRow("Sound", if (v.mute) "Muted in preview and export" else "Original audio") {
-                CtrlToggle(!v.mute, { on -> vm.edit(if (on) "Unmute" else "Mute") { it.copy(video = it.video.copy(mute = !on)) } }, "Sound")
+            CtrlRow(tr(R.string.sound), if (v.mute) tr(R.string.muted_in_preview_and_export) else tr(R.string.original_audio)) {
+                CtrlToggle(!v.mute, { on -> vm.edit(if (on) tr(R.string.unmute) else tr(R.string.mute)) { it.copy(video = it.video.copy(mute = !on)) } }, tr(R.string.sound))
             }
-        } else MonoLabel("No audio track")
+        } else MonoLabel(tr(R.string.no_audio_track))
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-            MonoLabel("Speed", Modifier.padding(end = 6.dp))
+            MonoLabel(tr(R.string.speed), Modifier.padding(end = 6.dp))
             VideoEdit.SPEEDS.forEach { s ->
-                CtrlChip("${if (s == 0.5f) "0.5" else s.toInt()}×", v.speed == s, onClick = { vm.edit("Speed ${s}×") { it.copy(video = it.video.copy(speed = s)) } })
+                CtrlChip("${if (s == 0.5f) "0.5" else s.toInt()}×", v.speed == s, onClick = { vm.edit(tr(R.string.speed_x_x, s)) { it.copy(video = it.video.copy(speed = s)) } })
             }
         }
-        if (v.speed != 1f && hasAudio) MonoLabel("Audio is left out at other speeds")
+        if (v.speed != 1f && hasAudio) MonoLabel(tr(R.string.audio_is_left_out_at_other))
     }
 }
 
@@ -248,7 +250,7 @@ private fun Timeline(vm: LumenViewModel, position: Long, duration: Long, onSeek:
                             val v = params.video
                             val next = if (dragging == 1) v.copy(trimStartMs = ms.coerceAtMost(v.end(duration) - 500))
                             else v.copy(trimEndMs = ms.coerceAtLeast(v.trimStartMs + 500).let { if (it >= duration - 50) -1 else it })
-                            vm.setLiveParams(params.copy(video = next), "Trim")
+                            vm.setLiveParams(params.copy(video = next), tr(R.string.trim))
                             onSeek(if (dragging == 1) next.trimStartMs else next.end(duration))
                         },
                         onDragEnd = { dragging = 0; vm.commit() },
@@ -300,7 +302,7 @@ private fun VideoCanvas(vm: LumenViewModel, st: EditorState, onPlayer: (MediaPla
                     player.setSurface(surface)
                     player.setOnPreparedListener { onPlayer(it) }
                     player.prepareAsync()
-                }.onFailure { vm.toast("Can't play this video: ${it.message}") }
+                }.onFailure { vm.toast(tr(R.string.cant_play_this_video_x, it.message)) }
             }
         }
         onDispose { runCatching { player.release() }; renderer.release() }
@@ -340,20 +342,20 @@ private fun VideoCanvas(vm: LumenViewModel, st: EditorState, onPlayer: (MediaPla
 }
 
 @Composable
-fun VideoExportSheet(title: String = "Export video", onDismiss: () -> Unit, onExport: (maxEdge: Int, share: Boolean) -> Unit) {
+fun VideoExportSheet(title: String = tr(R.string.export_video), onDismiss: () -> Unit, onExport: (maxEdge: Int, share: Boolean) -> Unit) {
     val c = Ctrl.colors
     var edge by remember { mutableStateOf(1920) }
     CtrlSheet(title, onDismiss) {
-        MonoLabel("Resolution")
+        MonoLabel(tr(R.string.resolution))
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             listOf("720p" to 1280, "1080p" to 1920, "4K" to 3840).forEach { (l, e) -> CtrlChip(l, edge == e, onClick = { edge = e }) }
         }
-        Text("H.264 MP4, 30 fps. Edits, trim and speed are applied; original audio is copied when the speed is normal.", style = CtrlType.value.copy(fontFamily = com.vknxworks.lumenctrl.ui.ctrl.SpaceGrotesk), color = c.muted)
+        Text(tr(R.string.h_264_mp4_30_fps_edits), style = CtrlType.value.copy(fontFamily = com.vknxworks.lumenctrl.ui.ctrl.SpaceGrotesk), color = c.muted)
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            CtrlButton("Save to gallery", onClick = { onExport(edge, false) }, icon = Icons.Outlined.Download, style = CtrlButtonStyle.Accent, modifier = Modifier.weight(1f))
-            CtrlButton("Share", onClick = { onExport(edge, true) }, icon = Icons.Outlined.Share)
+            CtrlButton(tr(R.string.save_to_gallery), onClick = { onExport(edge, false) }, icon = Icons.Outlined.Download, style = CtrlButtonStyle.Accent, modifier = Modifier.weight(1f))
+            CtrlButton(tr(R.string.share), onClick = { onExport(edge, true) }, icon = Icons.Outlined.Share)
         }
-        MonoLabel("Rendered on this device · nothing is uploaded")
+        MonoLabel(tr(R.string.rendered_on_this_device_nothing_is))
     }
 }
 

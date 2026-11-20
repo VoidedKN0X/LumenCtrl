@@ -1,5 +1,6 @@
 package com.vknxworks.lumenctrl.ui.ctrl
 
+import com.vknxworks.lumenctrl.tr
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
@@ -116,10 +117,10 @@ private fun Typography.withFamily(f: FontFamily) = Typography(
 data class Accent(val name: String, val dark: Color, val lightFill: Color, val lightOn: Color, val lightText: Color)
 
 val ACCENTS = listOf(
-    Accent("Lavender", Color(0xFFB48CFF), Color(0xFFB48CFF), Color(0xFF08080A), Color(0xFF6A3BDB)),
-    Accent("Ember", Color(0xFFFF6A2B), Color(0xFFFF6A2B), Color(0xFF08080A), Color(0xFFB8400F)),
-    Accent("Sky", Color(0xFF5CC8FF), Color(0xFF5CC8FF), Color(0xFF08080A), Color(0xFF0A6E9E)),
-    Accent("Chalk", Color(0xFFF4F4F2), Color(0xFF0B0B0D), Color(0xFFF5F5F1), Color(0xFF0B0B0D)),
+    Accent(tr(R.string.lavender), Color(0xFFB48CFF), Color(0xFFB48CFF), Color(0xFF08080A), Color(0xFF6A3BDB)),
+    Accent(tr(R.string.ember), Color(0xFFFF6A2B), Color(0xFFFF6A2B), Color(0xFF08080A), Color(0xFFB8400F)),
+    Accent(tr(R.string.sky), Color(0xFF5CC8FF), Color(0xFF5CC8FF), Color(0xFF08080A), Color(0xFF0A6E9E)),
+    Accent(tr(R.string.chalk), Color(0xFFF4F4F2), Color(0xFF0B0B0D), Color(0xFFF5F5F1), Color(0xFF0B0B0D)),
 )
 
 @Composable

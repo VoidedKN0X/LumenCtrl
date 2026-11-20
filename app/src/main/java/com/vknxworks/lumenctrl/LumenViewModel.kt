@@ -50,10 +50,10 @@ import java.util.UUID
 enum class Screen { LIBRARY, EDITOR, SLIDESHOW, COLLAGE, SETTINGS, CAMERA, VIDEO }
 
 enum class LibFilter(val label: String) {
-    ALL("All"), PICKS("Picks"), REJECTED("Rejected"), EDITED("Edited"), UNEDITED("Unedited"), RATED("★ 3+"),
+    ALL(tr(R.string.all)), PICKS(tr(R.string.picks)), REJECTED(tr(R.string.rejected)), EDITED(tr(R.string.edited)), UNEDITED(tr(R.string.unedited)), RATED("★ 3+"),
 }
 
-enum class SortOrder(val label: String) { NEWEST("Newest"), OLDEST("Oldest"), IMPORTED("Recently added") }
+enum class SortOrder(val label: String) { NEWEST(tr(R.string.newest)), OLDEST(tr(R.string.oldest)), IMPORTED(tr(R.string.recently_added)) }
 
 class LumenViewModel(app: Application) : AndroidViewModel(app) {
     private val catalog = Catalog(app)
@@ -193,11 +193,11 @@ class LumenViewModel(app: Application) : AndroidViewModel(app) {
                 if (openPhoto?.id == photo.id) {
                     denoised = bmp
                     val amt = params[Param.AI_DENOISE]
-                    edit("AI Denoise · ${model.label}") { it.with(Param.AI_DENOISE, if (amt > 0f) amt else 0.8f) }
+                    edit(tr(R.string.ai_denoise_x, model.label)) { it.with(Param.AI_DENOISE, if (amt > 0f) amt else 0.8f) }
                 }
-                message = "AI Denoise done · ${(System.currentTimeMillis() - t0) / 1000} s on device"
+                message = tr(R.string.ai_denoise_done_x_s_on, (System.currentTimeMillis() - t0) / 1000)
             }.onFailure {
-                if (it !is Denoiser.Cancelled) message = "AI Denoise failed: ${it.message}"
+                if (it !is Denoiser.Cancelled) message = tr(R.string.ai_denoise_failed_x, it.message)
             }
             denoiseProgress = null
             denoiseModel = null
@@ -210,7 +210,7 @@ class LumenViewModel(app: Application) : AndroidViewModel(app) {
     fun removeDenoise() {
         val photo = openPhoto ?: return
         denoised = null
-        edit("Remove AI Denoise") { it.with(Param.AI_DENOISE, 0f) }
+        edit(tr(R.string.remove_ai_denoise)) { it.with(Param.AI_DENOISE, 0f) }
         viewModelScope.launch(Dispatchers.IO) { Denoiser.fileFor(photo.original).delete() }
     }
 
@@ -218,7 +218,7 @@ class LumenViewModel(app: Application) : AndroidViewModel(app) {
     fun mergeHdr(ids: List<String>) {
         if (ids.size < 2) return
         viewModelScope.launch {
-            busy = "Merging ${ids.size} exposures to HDR"
+            busy = tr(R.string.merging_x_exposures_to_hdr, ids.size)
             runCatching {
                 val files = ids.map { catalog.photo(it) }.filter { !it.isVideo }.map { it.original }
                 val r = withContext(Dispatchers.Default) { HdrMerge.merge(files) }
@@ -227,8 +227,8 @@ class LumenViewModel(app: Application) : AndroidViewModel(app) {
                 r.gainmap != null
             }.onSuccess { hdr ->
                 selection = emptySet()
-                message = if (hdr) "HDR photo added to your library" else "Merged photo added (HDR needs Android 14)"
-            }.onFailure { message = "HDR merge failed: ${it.message}" }
+                message = if (hdr) tr(R.string.hdr_photo_added_to_your_library) else tr(R.string.merged_photo_added_hdr_needs_android)
+            }.onFailure { message = tr(R.string.hdr_merge_failed_x, it.message) }
             busy = null
             refresh()
         }
@@ -261,12 +261,12 @@ class LumenViewModel(app: Application) : AndroidViewModel(app) {
 
     fun connectCamera(d: UsbDevice) {
         viewModelScope.launch {
-            camStatus = "Waiting for USB permission"
-            if (!cam.requestPermission(d)) { camStatus = "USB access was declined"; return@launch }
-            camStatus = "Connecting to ${cam.label(d)}"
-            if (!cam.open(d)) { camStatus = "Couldn't open the camera. Set it to PTP/MTP (PC connection) mode."; return@launch }
+            camStatus = tr(R.string.waiting_for_usb_permission)
+            if (!cam.requestPermission(d)) { camStatus = tr(R.string.usb_access_was_declined); return@launch }
+            camStatus = tr(R.string.connecting_to_x, cam.label(d))
+            if (!cam.open(d)) { camStatus = tr(R.string.couldnt_open_the_camera_set_it); return@launch }
             camConnected = cam.label(d)
-            camStatus = "Reading the card"
+            camStatus = tr(R.string.reading_the_card)
             val imported = allPhotos.map { it.meta.name to it.meta.bytes }.toSet()
             camPhotos = cam.listPhotos { n, s -> (n to s) in imported }
             camSelected = camPhotos.filter { !it.alreadyImported }.map { it.handle }.toSet()
@@ -288,7 +288,7 @@ class LumenViewModel(app: Application) : AndroidViewModel(app) {
             val okHandles = mutableSetOf<Int>()
             val tmpDir = File(app.cacheDir, "usb")
             for (p in chosen) {
-                busy = "Importing ${okHandles.size + skipped + 1} of ${chosen.size}"
+                busy = tr(R.string.importing_x_of_x, okHandles.size + skipped + 1, chosen.size)
                 // The name comes from the USB device: never let it pick the path ("../" or "/" in it). Only a
                 // plain extension is kept.
                 val ext = p.name.substringAfterLast('.', "").lowercase().filter { it in 'a'..'z' || it in '0'..'9' }.take(8)
@@ -301,7 +301,7 @@ class LumenViewModel(app: Application) : AndroidViewModel(app) {
             refresh()
             camPhotos = camPhotos.map { if (it.handle in okHandles) it.copy(alreadyImported = true) else it }
             camSelected = emptySet()
-            message = if (skipped == 0) "Imported $done from camera" else "Imported $done · $skipped not readable on this phone"
+            message = if (skipped == 0) tr(R.string.imported_x_from_camera, done) else tr(R.string.imported_x_x_not_readable_on, done, skipped)
         }
     }
 
@@ -309,7 +309,7 @@ class LumenViewModel(app: Application) : AndroidViewModel(app) {
 
     private data class Step(val label: String, val before: EditParams)
     private var committed = EditParams()
-    private var pendingLabel = "Edit"
+    private var pendingLabel = tr(R.string.edit)
     private val undoStack = ArrayDeque<Step>()
     private val redoStack = ArrayDeque<Step>()
 
@@ -330,12 +330,12 @@ class LumenViewModel(app: Application) : AndroidViewModel(app) {
     fun import(uris: List<Uri>) {
         if (uris.isEmpty()) return
         viewModelScope.launch {
-            busy = "Importing ${uris.size} photo(s)"
+            busy = tr(R.string.importing_x_photo_s, uris.size)
             val ids = catalog.import(uris)
             albumFilter?.let { a -> catalog.updateMeta(ids) { it.copy(albums = it.albums + a) } }
             busy = null
             refresh()
-            message = if (ids.size == uris.size) "Imported ${ids.size} photo(s)" else "Imported ${ids.size} of ${uris.size}"
+            message = if (ids.size == uris.size) tr(R.string.imported_x_photo_s, ids.size) else tr(R.string.imported_x_of_x, ids.size, uris.size)
         }
     }
 
@@ -345,7 +345,7 @@ class LumenViewModel(app: Application) : AndroidViewModel(app) {
             catalog.import(listOf(uri))
             withContext(Dispatchers.IO) { file.delete() }
             refresh()
-            message = "Photo added"
+            message = tr(R.string.photo_added)
         }
     }
 
@@ -368,7 +368,7 @@ class LumenViewModel(app: Application) : AndroidViewModel(app) {
             val a = catalog.createAlbum(name)
             if (add.isNotEmpty()) catalog.updateMeta(add) { it.copy(albums = it.albums + a.id) }
             refresh()
-            message = if (add.isEmpty()) "Album created" else "Added ${add.size} to ${a.name}"
+            message = if (add.isEmpty()) tr(R.string.album_created) else tr(R.string.added_x_to_x, add.size, a.name)
         }
     }
 
@@ -387,7 +387,7 @@ class LumenViewModel(app: Application) : AndroidViewModel(app) {
             allPhotos.filter { it.id in ids }.forEach { catalog.delete(it) }
             selection = emptySet()
             refresh()
-            message = "Removed ${ids.size} photo(s)"
+            message = tr(R.string.removed_x_photo_s, ids.size)
         }
     }
 
@@ -395,7 +395,7 @@ class LumenViewModel(app: Application) : AndroidViewModel(app) {
         val c = clipboard ?: return
         val ids = selection
         viewModelScope.launch {
-            busy = "Pasting settings"
+            busy = tr(R.string.pasting_settings)
             allPhotos.filter { it.id in ids }.forEach { p ->
                 val merged = catalog.loadParams(p).pasteAdjustmentsFrom(c)
                 catalog.saveParams(p, merged)
@@ -404,7 +404,7 @@ class LumenViewModel(app: Application) : AndroidViewModel(app) {
             busy = null
             thumbVersion++
             refresh()
-            message = "Pasted settings to ${ids.size} photo(s)"
+            message = tr(R.string.pasted_settings_to_x_photo_s, ids.size)
         }
     }
 
@@ -416,7 +416,7 @@ class LumenViewModel(app: Application) : AndroidViewModel(app) {
         if (ids.isEmpty()) return
         val app = getApplication<Application>()
         viewModelScope.launch {
-            busy = if (ids.size == 1) "Exporting" else "Exporting ${ids.size} photos"
+            busy = if (ids.size == 1) tr(R.string.exporting) else tr(R.string.exporting_x_photos, ids.size)
             runCatching {
                 withContext(Dispatchers.Default) {
                     val outDir = File(app.cacheDir, if (share) "share" else "export")
@@ -438,8 +438,8 @@ class LumenViewModel(app: Application) : AndroidViewModel(app) {
                     uris
                 }
             }.onSuccess { uris ->
-                if (share) shareRequest = uris else message = "Saved ${ids.size} to Pictures/Lumen"
-            }.onFailure { message = "Export failed: ${it.message}" }
+                if (share) shareRequest = uris else message = tr(R.string.saved_x_to_pictures_lumen, ids.size)
+            }.onFailure { message = tr(R.string.export_failed_x, it.message) }
             busy = null
         }
     }
@@ -478,11 +478,11 @@ class LumenViewModel(app: Application) : AndroidViewModel(app) {
     fun addAiMask(kind: AiKind, onAdded: (Int) -> Unit) {
         val bmp = preview ?: return
         val photo = openPhoto ?: return
-        if (params.masks.size >= MAX_MASKS) { message = "Up to $MAX_MASKS masks per photo"; return }
-        if (params.masks.count { it.type == MaskType.AI } >= AiAtlas.MAX_AI) { message = "Up to ${AiAtlas.MAX_AI} AI masks per photo"; return }
+        if (params.masks.size >= MAX_MASKS) { message = tr(R.string.up_to_x_masks_per_photo, MAX_MASKS); return }
+        if (params.masks.count { it.type == MaskType.AI } >= AiAtlas.MAX_AI) { message = tr(R.string.up_to_x_ai_masks_per, AiAtlas.MAX_AI); return }
         val app = getApplication<Application>()
         viewModelScope.launch {
-            busy = "Finding ${kind.label.lowercase()} on device"
+            busy = tr(R.string.finding_x_on_device, kind.label.lowercase())
             val t0 = System.currentTimeMillis()
             runCatching {
                 val mask = withContext(Dispatchers.Default) { Segmenter.segment(app, bmp, kind) }
@@ -492,11 +492,11 @@ class LumenViewModel(app: Application) : AndroidViewModel(app) {
                 id
             }.onSuccess { id ->
                 android.util.Log.d("LumenAI", "${kind.name} mask in ${System.currentTimeMillis() - t0} ms")
-                edit("Select ${kind.label.lowercase()}") {
+                edit(tr(R.string.select_x, kind.label.lowercase())) {
                     it.copy(masks = it.masks + LocalMask(id, MaskType.AI, 0f, 0f, 0f, 0f, feather = 0.3f, ai = kind))
                 }
                 onAdded(params.masks.lastIndex)
-            }.onFailure { message = if (it is Segmenter.NothingFound) it.message else "AI mask failed: ${it.message}" }
+            }.onFailure { message = if (it is Segmenter.NothingFound) it.message else tr(R.string.ai_mask_failed_x, it.message) }
             busy = null
         }
     }
@@ -504,12 +504,12 @@ class LumenViewModel(app: Application) : AndroidViewModel(app) {
     fun saveCollage(bitmap: Bitmap) {
         val app = getApplication<Application>()
         viewModelScope.launch {
-            busy = "Saving collage"
+            busy = tr(R.string.saving_collage)
             runCatching {
                 withContext(Dispatchers.IO) { Exporter.saveBitmapToGallery(app, bitmap, "Lumen_collage_${stamp()}") }
-                catalog.importBitmap(bitmap, "Collage ${stamp()}")
-            }.onSuccess { message = "Collage saved to Pictures/Lumen and your library" }
-                .onFailure { message = "Couldn't save collage: ${it.message}" }
+                catalog.importBitmap(bitmap, tr(R.string.collage_x, stamp()))
+            }.onSuccess { message = tr(R.string.collage_saved_to_pictures_lumen_and) }
+                .onFailure { message = tr(R.string.couldnt_save_collage_x, it.message) }
             busy = null
             refresh()
         }
@@ -542,7 +542,7 @@ class LumenViewModel(app: Application) : AndroidViewModel(app) {
                 // 3072 px keeps detail when zooming in the loupe.
                 withContext(Dispatchers.IO) { ImageLoader.decode(photo.original, 3072) }
             }.getOrElse {
-                message = "Can't open this photo: ${it.message}"
+                message = tr(R.string.cant_open_this_photo_x, it.message)
                 openPhoto = null
                 screen = Screen.LIBRARY
                 null
@@ -620,7 +620,7 @@ class LumenViewModel(app: Application) : AndroidViewModel(app) {
             var audioDropped = false
             runCatching {
                 jobs.forEachIndexed { j, job ->
-                    val label = if (reel) "Rendering reel" else "Exporting video ${j + 1} of ${jobs.size}"
+                    val label = if (reel) tr(R.string.rendering_reel) else tr(R.string.exporting_video_x_of_x, j + 1, jobs.size)
                     busy = label
                     val out = File(outDir, "Lumen_${if (reel) "reel" else "video"}_${stamp()}_${j + 1}.mp4")
                     val audioOk = withContext(Dispatchers.Default) {
@@ -636,9 +636,9 @@ class LumenViewModel(app: Application) : AndroidViewModel(app) {
                 }
             }.onSuccess {
                 if (share) shareRequest = uris
-                else message = (if (reel) "Reel saved to Movies/Lumen and your library" else "Saved ${jobs.size} video(s) to Movies/Lumen") +
-                    if (audioDropped) " · audio left out (speed change or mixed formats)" else ""
-            }.onFailure { message = "Video export failed: ${it.message}" }
+                else message = (if (reel) tr(R.string.reel_saved_to_movies_lumen_and) else tr(R.string.saved_x_video_s_to_movies, jobs.size)) +
+                    if (audioDropped) tr(R.string.audio_left_out_speed_change_or) else ""
+            }.onFailure { message = tr(R.string.video_export_failed_x, it.message) }
             busy = null
             refresh()
         }
@@ -685,7 +685,7 @@ class LumenViewModel(app: Application) : AndroidViewModel(app) {
         commit()
     }
 
-    fun reset(p: Param) = edit("Reset ${p.label}") { it.with(p, p.default) }
+    fun reset(p: Param) = edit(tr(R.string.reset_x, p.label)) { it.with(p, p.default) }
 
     fun undo() {
         val step = undoStack.removeLastOrNull() ?: return
@@ -716,8 +716,8 @@ class LumenViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch { catalog.saveParams(photo, p) }
     }
 
-    fun copySettings() { clipboard = params; message = "Settings copied" }
-    fun pasteSettings() { clipboard?.let { c -> edit("Paste settings") { it.pasteAdjustmentsFrom(c) } } }
+    fun copySettings() { clipboard = params; message = tr(R.string.settings_copied) }
+    fun pasteSettings() { clipboard?.let { c -> edit(tr(R.string.paste_settings)) { it.pasteAdjustmentsFrom(c) } } }
 
     // ---- Auto tools (on-device statistics) ----
 
@@ -725,7 +725,7 @@ class LumenViewModel(app: Application) : AndroidViewModel(app) {
         val bmp = preview ?: return
         viewModelScope.launch {
             val auto = withContext(Dispatchers.Default) { AutoTools.autoTone(bmp) }
-            edit("Auto") { p -> auto.entries.fold(p) { acc, (k, v) -> acc.with(k, v) } }
+            edit(tr(R.string.auto)) { p -> auto.entries.fold(p) { acc, (k, v) -> acc.with(k, v) } }
         }
     }
 
@@ -733,7 +733,7 @@ class LumenViewModel(app: Application) : AndroidViewModel(app) {
         val bmp = preview ?: return
         viewModelScope.launch {
             val (t, i) = withContext(Dispatchers.Default) { AutoTools.neutralWhiteBalance(bmp, u, v) }
-            edit("White balance") { it.with(Param.TEMPERATURE, t).with(Param.TINT, i) }
+            edit(tr(R.string.white_balance)) { it.with(Param.TEMPERATURE, t).with(Param.TINT, i) }
         }
     }
 
@@ -741,8 +741,8 @@ class LumenViewModel(app: Application) : AndroidViewModel(app) {
         val bmp = preview ?: return
         viewModelScope.launch {
             val angle = withContext(Dispatchers.Default) { AutoTools.autoStraighten(bmp, params) }
-            if (angle == null) message = "No clear horizon or verticals found"
-            else edit("Auto straighten") { it.with(Param.STRAIGHTEN, angle) }
+            if (angle == null) message = tr(R.string.no_clear_horizon_or_verticals_found)
+            else edit(tr(R.string.auto_straighten)) { it.with(Param.STRAIGHTEN, angle) }
         }
     }
 
@@ -750,17 +750,17 @@ class LumenViewModel(app: Application) : AndroidViewModel(app) {
 
     fun addSpot(u: Float, v: Float, radius: Float) {
         val bmp = preview ?: return
-        if (params.spots.size >= MAX_SPOTS) { message = "Up to $MAX_SPOTS spots per photo"; return }
+        if (params.spots.size >= MAX_SPOTS) { message = tr(R.string.up_to_x_spots_per_photo, MAX_SPOTS); return }
         viewModelScope.launch {
             val (sx, sy) = withContext(Dispatchers.Default) { AutoTools.findHealSource(bmp, u, v, radius) }
-            edit("Heal spot") { it.copy(spots = it.spots + Spot(u, v, sx, sy, radius)) }
+            edit(tr(R.string.heal_spot)) { it.copy(spots = it.spots + Spot(u, v, sx, sy, radius)) }
         }
     }
 
     // ---- Masks ----
 
     fun addMask(type: MaskType): Int {
-        if (params.masks.size >= MAX_MASKS) { message = "Up to $MAX_MASKS masks per photo"; return params.masks.size - 1 }
+        if (params.masks.size >= MAX_MASKS) { message = tr(R.string.up_to_x_masks_per_photo, MAX_MASKS); return params.masks.size - 1 }
         val id = UUID.randomUUID().toString().take(8)
         val m = when (type) {
             MaskType.LINEAR -> LocalMask(id, type, 0.5f, 0.15f, 0.5f, 0.55f)
@@ -768,7 +768,7 @@ class LumenViewModel(app: Application) : AndroidViewModel(app) {
             MaskType.LUMA -> LocalMask(id, type, 0.6f, 0f, 1f, 0f, feather = 0.4f)
             MaskType.COLOR -> LocalMask(id, type, 0.6f, 0f, 0.08f, 0f, feather = 0.5f)
         }
-        edit("Add ${type.label.lowercase()} mask") { it.copy(masks = it.masks + m) }
+        edit(tr(R.string.add_x_mask, type.label.lowercase())) { it.copy(masks = it.masks + m) }
         return params.masks.size - 1
     }
 
@@ -776,13 +776,13 @@ class LumenViewModel(app: Application) : AndroidViewModel(app) {
 
     fun saveVersion() {
         val photo = openPhoto ?: return
-        val v = Version("Version ${versions.size + 1}", System.currentTimeMillis(), params)
+        val v = Version(tr(R.string.version_x, versions.size + 1), System.currentTimeMillis(), params)
         versions = versions + v
         viewModelScope.launch { catalog.saveVersions(photo, versions) }
-        message = "Saved ${v.name}"
+        message = tr(R.string.saved_x, v.name)
     }
 
-    fun restoreVersion(v: Version) = edit("Restore ${v.name}") { v.params }
+    fun restoreVersion(v: Version) = edit(tr(R.string.restore_x, v.name)) { v.params }
 
     fun deleteVersion(v: Version) {
         val photo = openPhoto ?: return

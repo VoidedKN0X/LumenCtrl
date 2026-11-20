@@ -1,5 +1,7 @@
 package com.vknxworks.lumenctrl.ui
 
+import com.vknxworks.lumenctrl.R
+import com.vknxworks.lumenctrl.tr
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -101,18 +103,18 @@ fun CameraImportScreen(vm: LumenViewModel) {
             item(span = { GridItemSpan(maxLineSpan) }) {
                 Column(Modifier.padding(top = 16.dp, bottom = 10.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        CtrlIconButton(Icons.AutoMirrored.Outlined.ArrowBack, "Back to library", vm::leaveCameraImport)
+                        CtrlIconButton(Icons.AutoMirrored.Outlined.ArrowBack, tr(R.string.back_to_library), vm::leaveCameraImport)
                         Spacer(Modifier.weight(1f))
-                        CtrlIconButton(Icons.Outlined.Refresh, "Look for cameras again", vm::refreshCameras, style = CtrlButtonStyle.Ghost)
+                        CtrlIconButton(Icons.Outlined.Refresh, tr(R.string.look_for_cameras_again), vm::refreshCameras, style = CtrlButtonStyle.Ghost)
                     }
                     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        MonoLabel("USB · PTP / MTP")
-                        Text("Camera", style = CtrlType.display, color = c.text)
+                        MonoLabel(tr(R.string.usb_ptp_mtp))
+                        Text(tr(R.string.camera), style = CtrlType.display, color = c.text)
                         Text(
                             when {
-                                vm.camConnected != null -> "${photos.size} photos · $newCount new"
-                                vm.camDevices.isNotEmpty() -> "${vm.camDevices.size} device(s) found"
-                                else -> "No camera connected"
+                                vm.camConnected != null -> tr(R.string.x_photos_x_new, photos.size, newCount)
+                                vm.camDevices.isNotEmpty() -> tr(R.string.x_device_s_found, vm.camDevices.size)
+                                else -> tr(R.string.no_camera_connected)
                             },
                             style = CtrlType.value, color = c.muted,
                         )
@@ -127,10 +129,10 @@ fun CameraImportScreen(vm: LumenViewModel) {
                     Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
                         StatusDot(c.accent)
                         MonoLabel(vm.camConnected ?: "", color = c.text, modifier = Modifier.weight(1f).padding(start = 6.dp))
-                        CtrlChip("New", selected == photos.filter { !it.alreadyImported }.map { it.handle }.toSet() && newCount > 0,
+                        CtrlChip(tr(R.string.new_text), selected == photos.filter { !it.alreadyImported }.map { it.handle }.toSet() && newCount > 0,
                             onClick = { vm.camSelected = photos.filter { !it.alreadyImported }.map { it.handle }.toSet() })
-                        CtrlChip("All", selected.size == photos.size && photos.isNotEmpty(), onClick = { vm.camSelected = photos.map { it.handle }.toSet() })
-                        CtrlChip("None", selected.isEmpty(), onClick = { vm.camSelected = emptySet() })
+                        CtrlChip(tr(R.string.all), selected.size == photos.size && photos.isNotEmpty(), onClick = { vm.camSelected = photos.map { it.handle }.toSet() })
+                        CtrlChip(tr(R.string.none), selected.isEmpty(), onClick = { vm.camSelected = emptySet() })
                     }
                 }
                 items(photos, key = { it.handle }) { p -> CamThumb(vm, p, p.handle in selected) }
@@ -144,13 +146,13 @@ fun CameraImportScreen(vm: LumenViewModel) {
         ) {
             Row(Modifier.padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                 CtrlButton(
-                    if (selected.isEmpty()) "Import" else "Import ${selected.size}",
+                    if (selected.isEmpty()) tr(R.string.import_text) else tr(R.string.import_x, selected.size),
                     onClick = vm::importFromCamera, icon = Icons.Outlined.Download,
                     style = if (selected.isEmpty()) CtrlButtonStyle.Bordered else CtrlButtonStyle.Accent,
                     modifier = Modifier.height(48.dp),
                 )
                 Spacer(Modifier.weight(1f))
-                MonoLabel("Copied to private library", Modifier.padding(end = 12.dp))
+                MonoLabel(tr(R.string.copied_to_private_library), Modifier.padding(end = 12.dp))
             }
         }
     }
@@ -162,7 +164,7 @@ private fun DeviceList(vm: LumenViewModel) {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         vm.camStatus?.let { s ->
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                if (s.startsWith("Waiting") || s.startsWith("Connecting") || s.startsWith("Reading")) {
+                if (s.startsWith(tr(R.string.waiting)) || s.startsWith(tr(R.string.connecting)) || s.startsWith(tr(R.string.reading))) {
                     CircularProgressIndicator(Modifier.size(16.dp), color = c.accent, strokeWidth = 2.dp)
                 }
                 MonoLabel(s, color = c.text)
@@ -172,10 +174,10 @@ private fun DeviceList(vm: LumenViewModel) {
             Surface(shape = CardShape, color = c.surface, border = BorderStroke(1.dp, c.border), modifier = Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Icon(Icons.Outlined.Usb, null, tint = c.accentText, modifier = Modifier.size(28.dp))
-                    Text("Connect your camera", style = CtrlType.title, color = c.text)
+                    Text(tr(R.string.connect_your_camera), style = CtrlType.title, color = c.text)
                     Text(
-                        "Use a USB-C cable or an OTG adapter, switch the camera on, and set its USB mode to PTP, MTP or \"PC connection\". " +
-                            "LumenCtrl opens automatically when one is plugged in. SD card readers show up in Import instead.",
+                        tr(R.string.use_a_usb_c_cable_or) +
+                            tr(R.string.lumenctrl_opens_automatically_when_one_is),
                         color = c.muted,
                     )
                 }
@@ -189,10 +191,10 @@ private fun DeviceList(vm: LumenViewModel) {
                 Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                     Icon(Icons.Outlined.PhotoCamera, null, tint = c.text, modifier = Modifier.size(24.dp))
                     Column(Modifier.weight(1f)) {
-                        Text(listOfNotNull(d.manufacturerName, d.productName).joinToString(" ").ifBlank { "USB camera" }, style = CtrlType.body, color = c.text)
-                        MonoLabel("Tap to open the card")
+                        Text(listOfNotNull(d.manufacturerName, d.productName).joinToString(" ").ifBlank { tr(R.string.usb_camera) }, style = CtrlType.body, color = c.text)
+                        MonoLabel(tr(R.string.tap_to_open_the_card))
                     }
-                    CtrlButton("Open", onClick = { vm.connectCamera(d) }, style = CtrlButtonStyle.Accent)
+                    CtrlButton(tr(R.string.open_text), onClick = { vm.connectCamera(d) }, style = CtrlButtonStyle.Accent)
                 }
             }
         }
@@ -209,7 +211,7 @@ private fun CamThumb(vm: LumenViewModel, p: CamPhoto, selected: Boolean) {
             .clip(shape)
             .background(c.surface)
             .border(if (selected) 3.dp else 1.dp, if (selected) c.accent else c.border, shape)
-            .clickable(role = Role.Checkbox, onClickLabel = if (selected) "Deselect" else "Select") {
+            .clickable(role = Role.Checkbox, onClickLabel = if (selected) tr(R.string.deselect) else tr(R.string.select)) {
                 vm.camSelected = if (selected) vm.camSelected - p.handle else vm.camSelected + p.handle
             },
     ) {
@@ -221,13 +223,13 @@ private fun CamThumb(vm: LumenViewModel, p: CamPhoto, selected: Boolean) {
                 .background(c.bg.copy(alpha = 0.8f), RoundedCornerShape(6.dp)).padding(horizontal = 5.dp, vertical = 2.dp),
             horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
-            if (p.raw) Text("RAW", style = CtrlType.label, color = c.accentText)
-            if (p.alreadyImported) Text("IN LIBRARY", style = CtrlType.label, color = c.muted)
+            if (p.raw) Text(tr(R.string.raw), style = CtrlType.label, color = c.accentText)
+            if (p.alreadyImported) Text(tr(R.string.in_library), style = CtrlType.label, color = c.muted)
             else if (p.takenAt > 0) Text(DateFormat.getDateInstance(DateFormat.SHORT).format(Date(p.takenAt)), style = CtrlType.label, color = c.text)
         }
         if (selected) {
             Icon(
-                Icons.Outlined.CheckCircle, "Selected", tint = c.onAccent,
+                Icons.Outlined.CheckCircle, tr(R.string.selected), tint = c.onAccent,
                 modifier = Modifier.align(Alignment.TopEnd).padding(6.dp).background(c.accent, RoundedCornerShape(12.dp)).padding(2.dp).size(18.dp),
             )
         }

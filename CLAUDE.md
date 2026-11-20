@@ -13,6 +13,8 @@ Photo and video editor in the VKNXWorks Ctrl series. Kotlin, Jetpack Compose, Ma
 
 To add a slider: add a `Param`, use `P_<key>` in `Shaders.FRAGMENT`. UI, persistence, presets, undo and export pick it up.
 
+Text the user sees lives in `res/values/strings.xml` and is read with `tr(R.string.key, args…)` (`AppStrings.kt`), which works in screens, the view model and the model enums alike (a new `Param` takes its label and section from there too). `MainActivity.onCreate` calls `AppStrings.init` before anything else. Still in the code on purpose: preset names (they are saved in edit sidecars), number and unit formats (`%+.2f EV`, `ISO 100`), file and folder names, the brand marks "Lumen" and "CTRL", and internal error texts.
+
 ## Hard rules
 
 - **No `INTERNET` permission, ever** (the manifest removes it; CI fails the build if the APK has any network permission).

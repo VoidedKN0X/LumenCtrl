@@ -1,5 +1,7 @@
 package com.vknxworks.lumenctrl.ui
 
+import com.vknxworks.lumenctrl.R
+import com.vknxworks.lumenctrl.tr
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -115,7 +117,7 @@ fun LibraryScreen(vm: LumenViewModel) {
         val f = File(context.cacheDir, "capture/IMG_${System.currentTimeMillis()}.jpg").apply { parentFile?.mkdirs() }
         val u = FileProvider.getUriForFile(context, "${context.packageName}.files", f)
         captureFile = f; captureUri = u
-        runCatching { camera.launch(u) }.onFailure { vm.toast("No camera app available") }
+        runCatching { camera.launch(u) }.onFailure { vm.toast(tr(R.string.no_camera_app_available)) }
     }
 
     var dialog by remember { mutableStateOf<String?>(null) } // "delete", "newAlbum", "renameAlbum"
@@ -137,7 +139,7 @@ fun LibraryScreen(vm: LumenViewModel) {
             if (vm.allPhotos.isEmpty()) {
                 item(span = { GridItemSpan(maxLineSpan) }) { EmptyState(onImport = launchPicker) }
             } else if (photos.isEmpty()) {
-                item(span = { GridItemSpan(maxLineSpan) }) { MonoLabel("No photos match", Modifier.padding(vertical = 24.dp)) }
+                item(span = { GridItemSpan(maxLineSpan) }) { MonoLabel(tr(R.string.no_photos_match), Modifier.padding(vertical = 24.dp)) }
             }
             items(photos, key = { it.id }) { photo ->
                 val selected = photo.id in vm.selection
@@ -147,15 +149,15 @@ fun LibraryScreen(vm: LumenViewModel) {
                         .aspectRatio(1f)
                         .clip(ThumbShape)
                         .combinedClickable(
-                            onClickLabel = if (selecting) "Select" else "Edit photo",
-                            onLongClickLabel = "Select",
+                            onClickLabel = if (selecting) tr(R.string.select) else tr(R.string.edit_photo),
+                            onLongClickLabel = tr(R.string.select),
                             onClick = { if (selecting) vm.toggleSelect(photo.id) else vm.open(photo) },
                             onLongClick = { vm.toggleSelect(photo.id) },
                         ),
                 )
             }
             item(span = { GridItemSpan(maxLineSpan) }) {
-                MonoLabel("Offline · telemetry-free · on-device GPU", Modifier.fillMaxWidth().padding(top = 24.dp))
+                MonoLabel(tr(R.string.offline_telemetry_free_on_device_gpu), Modifier.fillMaxWidth().padding(top = 24.dp))
             }
         }
 
@@ -166,26 +168,26 @@ fun LibraryScreen(vm: LumenViewModel) {
         ) {
             if (selecting) SelectionBar(vm, onExport = { showExport = true }, onDelete = { dialog = "delete" }, onNewAlbum = { dialog = "newAlbum" })
             else Row(Modifier.padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                CtrlButton("Import", onClick = launchPicker, icon = Icons.Outlined.AddPhotoAlternate, style = CtrlButtonStyle.Accent, modifier = Modifier.height(48.dp))
+                CtrlButton(tr(R.string.import_text), onClick = launchPicker, icon = Icons.Outlined.AddPhotoAlternate, style = CtrlButtonStyle.Accent, modifier = Modifier.height(48.dp))
                 Spacer(Modifier.weight(1f))
-                CtrlIconButton(Icons.Outlined.PhotoCamera, "Take a photo", launchCamera, style = CtrlButtonStyle.Ghost)
-                CtrlIconButton(Icons.Outlined.Usb, "Import from USB camera", vm::openCameraImport, style = CtrlButtonStyle.Ghost)
-                CtrlIconButton(Icons.Outlined.Slideshow, "Slideshow", { vm.startSlideshow(photos.map { it.id }) }, style = CtrlButtonStyle.Ghost, enabled = photos.isNotEmpty())
-                CtrlIconButton(Icons.Outlined.Settings, "Settings", { vm.screen = Screen.SETTINGS }, style = CtrlButtonStyle.Ghost)
+                CtrlIconButton(Icons.Outlined.PhotoCamera, tr(R.string.take_a_photo), launchCamera, style = CtrlButtonStyle.Ghost)
+                CtrlIconButton(Icons.Outlined.Usb, tr(R.string.import_from_usb_camera), vm::openCameraImport, style = CtrlButtonStyle.Ghost)
+                CtrlIconButton(Icons.Outlined.Slideshow, tr(R.string.slideshow), { vm.startSlideshow(photos.map { it.id }) }, style = CtrlButtonStyle.Ghost, enabled = photos.isNotEmpty())
+                CtrlIconButton(Icons.Outlined.Settings, tr(R.string.settings), { vm.screen = Screen.SETTINGS }, style = CtrlButtonStyle.Ghost)
             }
         }
     }
 
     when (dialog) {
         "delete" -> ConfirmDialog(
-            "Remove ${vm.selection.size} photo(s)?",
-            "This removes them and their edits from Lumen. Copies in your gallery are not affected.",
-            "Remove", onConfirm = { vm.deletePhotos(vm.selection) }, onDismiss = { dialog = null },
+            tr(R.string.remove_x_photo_s, vm.selection.size),
+            tr(R.string.this_removes_them_and_their_edits),
+            tr(R.string.remove), onConfirm = { vm.deletePhotos(vm.selection) }, onDismiss = { dialog = null },
         )
-        "newAlbum" -> TextDialog("New album", "", "Create", onConfirm = { vm.createAlbum(it, vm.selection) }, onDismiss = { dialog = null })
+        "newAlbum" -> TextDialog(tr(R.string.new_album), "", tr(R.string.create), onConfirm = { vm.createAlbum(it, vm.selection) }, onDismiss = { dialog = null })
         "renameAlbum" -> {
             val a = vm.albums.firstOrNull { it.id == vm.albumFilter }
-            if (a != null) TextDialog("Rename album", a.name, "Rename", onConfirm = { vm.renameAlbum(a.id, it) }, onDismiss = { dialog = null })
+            if (a != null) TextDialog(tr(R.string.rename_album), a.name, tr(R.string.rename), onConfirm = { vm.renameAlbum(a.id, it) }, onDismiss = { dialog = null })
             else dialog = null
         }
     }
@@ -214,22 +216,22 @@ private fun Header(vm: LumenViewModel, onNewAlbum: () -> Unit, onRenameAlbum: ()
             Spacer(Modifier.weight(1f))
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 StatusDot(c.accent)
-                MonoLabel("Offline", color = c.text)
+                MonoLabel(tr(R.string.offline), color = c.text)
             }
         }
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            MonoLabel(if (album != null) "Album" else "Library · originals untouched")
-            Text(album?.name ?: "Photos", style = CtrlType.display, color = c.text, maxLines = 1)
+            MonoLabel(if (album != null) tr(R.string.album) else tr(R.string.library_originals_untouched))
+            Text(album?.name ?: tr(R.string.photos), style = CtrlType.display, color = c.text, maxLines = 1)
             val edited = vm.allPhotos.count { it.edited }
             Text(
-                if (album != null) "${vm.photos.size} photos" else "${vm.allPhotos.size} total · $edited edited",
+                if (album != null) tr(R.string.x_photos, vm.photos.size) else tr(R.string.x_total_x_edited, vm.allPhotos.size, edited),
                 style = CtrlType.value, color = c.muted,
             )
         }
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            CtrlTextField(vm.query, { vm.query = it }, "Search name, camera, date", Modifier.weight(1f), leading = Icons.Outlined.Search)
+            CtrlTextField(vm.query, { vm.query = it }, tr(R.string.search_name_camera_date), Modifier.weight(1f), leading = Icons.Outlined.Search)
             Box {
-                CtrlIconButton(Icons.Outlined.Sort, "Sort: ${vm.sort.label}", { sortMenu = true })
+                CtrlIconButton(Icons.Outlined.Sort, tr(R.string.sort_x, vm.sort.label), { sortMenu = true })
                 CtrlMenu(sortMenu, { sortMenu = false }) {
                     SortOrder.entries.forEach { s ->
                         CtrlMenuItem(s.label + if (vm.sort == s) "  ✓" else "") { vm.sort = s; sortMenu = false }
@@ -241,19 +243,19 @@ private fun Header(vm: LumenViewModel, onNewAlbum: () -> Unit, onRenameAlbum: ()
             items(LibFilter.entries) { f -> CtrlChip(f.label, vm.filter == f, onClick = { vm.filter = f }) }
         }
         LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-            item { CtrlChip("All photos", vm.albumFilter == null, icon = Icons.Outlined.Folder, onClick = { vm.albumFilter = null }) }
+            item { CtrlChip(tr(R.string.all_photos), vm.albumFilter == null, icon = Icons.Outlined.Folder, onClick = { vm.albumFilter = null }) }
             items(vm.albums, key = { it.id }) { a ->
                 Box {
                     CtrlChip(a.name, vm.albumFilter == a.id, onClick = {
                         if (vm.albumFilter == a.id) albumMenu = true else vm.albumFilter = a.id
                     })
                     if (vm.albumFilter == a.id) CtrlMenu(albumMenu, { albumMenu = false }) {
-                        CtrlMenuItem("Rename album") { albumMenu = false; onRenameAlbum() }
-                        CtrlMenuItem("Delete album") { albumMenu = false; vm.deleteAlbum(a.id) }
+                        CtrlMenuItem(tr(R.string.rename_album)) { albumMenu = false; onRenameAlbum() }
+                        CtrlMenuItem(tr(R.string.delete_album)) { albumMenu = false; vm.deleteAlbum(a.id) }
                     }
                 }
             }
-            item { CtrlChip("New", false, icon = Icons.Outlined.CreateNewFolder, onClick = onNewAlbum) }
+            item { CtrlChip(tr(R.string.new_text), false, icon = Icons.Outlined.CreateNewFolder, onClick = onNewAlbum) }
         }
     }
 }
@@ -262,13 +264,13 @@ private fun Header(vm: LumenViewModel, onNewAlbum: () -> Unit, onRenameAlbum: ()
 private fun SelectionHeader(vm: LumenViewModel) {
     val c = Ctrl.colors
     Row(Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 16.dp), verticalAlignment = Alignment.CenterVertically) {
-        CtrlIconButton(Icons.Outlined.Close, "Clear selection", vm::clearSelection)
+        CtrlIconButton(Icons.Outlined.Close, tr(R.string.clear_selection), vm::clearSelection)
         Spacer(Modifier.size(14.dp))
         Column(Modifier.weight(1f)) {
-            MonoLabel("Selected")
+            MonoLabel(tr(R.string.selected))
             Text("${vm.selection.size}", style = CtrlType.title, color = c.text)
         }
-        CtrlButton("Select all", onClick = vm::selectAll, icon = Icons.Outlined.SelectAll, style = CtrlButtonStyle.Ghost)
+        CtrlButton(tr(R.string.select_all), onClick = vm::selectAll, icon = Icons.Outlined.SelectAll, style = CtrlButtonStyle.Ghost)
     }
 }
 
@@ -276,7 +278,7 @@ private fun SelectionHeader(vm: LumenViewModel) {
 private fun SelectionBar(vm: LumenViewModel, onExport: () -> Unit, onDelete: () -> Unit, onNewAlbum: () -> Unit) {
     var reelIds by remember { mutableStateOf<List<String>?>(null) }
     reelIds?.let { ids ->
-        com.vknxworks.lumenctrl.ui.editor.VideoExportSheet("Make reel · ${ids.size} clips", onDismiss = { reelIds = null }) { edge, share ->
+        com.vknxworks.lumenctrl.ui.editor.VideoExportSheet(tr(R.string.make_reel_x_clips, ids.size), onDismiss = { reelIds = null }) { edge, share ->
             reelIds = null
             vm.exportVideos(ids, edge, share, reel = true)
         }
@@ -288,42 +290,42 @@ private fun SelectionBar(vm: LumenViewModel, onExport: () -> Unit, onDelete: () 
     val ghost = CtrlButtonStyle.Ghost
     Row(Modifier.padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
         Box {
-            CtrlIconButton(Icons.Outlined.Star, "Rate", { rate = true }, style = ghost)
+            CtrlIconButton(Icons.Outlined.Star, tr(R.string.rate), { rate = true }, style = ghost)
             CtrlMenu(rate, { rate = false }) {
-                (0..5).forEach { r -> CtrlMenuItem(if (r == 0) "No rating" else "★".repeat(r)) { vm.rate(sel, r); rate = false } }
+                (0..5).forEach { r -> CtrlMenuItem(if (r == 0) tr(R.string.no_rating) else "★".repeat(r)) { vm.rate(sel, r); rate = false } }
             }
         }
         Box {
-            CtrlIconButton(Icons.Outlined.Flag, "Flag", { flag = true }, style = ghost)
+            CtrlIconButton(Icons.Outlined.Flag, tr(R.string.flag), { flag = true }, style = ghost)
             CtrlMenu(flag, { flag = false }) {
-                CtrlMenuItem("Pick", Icons.Outlined.CheckCircle) { vm.flag(sel, 1); flag = false }
-                CtrlMenuItem("Reject", Icons.Outlined.Close) { vm.flag(sel, -1); flag = false }
-                CtrlMenuItem("Clear flag") { vm.flag(sel, 0); flag = false }
+                CtrlMenuItem(tr(R.string.pick), Icons.Outlined.CheckCircle) { vm.flag(sel, 1); flag = false }
+                CtrlMenuItem(tr(R.string.reject), Icons.Outlined.Close) { vm.flag(sel, -1); flag = false }
+                CtrlMenuItem(tr(R.string.clear_flag)) { vm.flag(sel, 0); flag = false }
             }
         }
         Box {
-            CtrlIconButton(Icons.Outlined.Folder, "Add to album", { album = true }, style = ghost)
+            CtrlIconButton(Icons.Outlined.Folder, tr(R.string.add_to_album), { album = true }, style = ghost)
             CtrlMenu(album, { album = false }) {
                 vm.albums.forEach { a -> CtrlMenuItem(a.name) { vm.addToAlbum(sel, a.id); album = false } }
-                vm.albumFilter?.let { cur -> CtrlMenuItem("Remove from this album") { vm.removeFromAlbum(sel, cur); album = false } }
-                CtrlMenuItem("New album…", Icons.Outlined.CreateNewFolder) { album = false; onNewAlbum() }
+                vm.albumFilter?.let { cur -> CtrlMenuItem(tr(R.string.remove_from_this_album)) { vm.removeFromAlbum(sel, cur); album = false } }
+                CtrlMenuItem(tr(R.string.new_album_2), Icons.Outlined.CreateNewFolder) { album = false; onNewAlbum() }
             }
         }
-        CtrlIconButton(Icons.Outlined.ContentPaste, "Paste settings", vm::pasteToSelected, style = ghost, enabled = vm.clipboard != null)
-        CtrlIconButton(Icons.Outlined.Download, "Export", onExport, style = ghost)
+        CtrlIconButton(Icons.Outlined.ContentPaste, tr(R.string.paste_settings), vm::pasteToSelected, style = ghost, enabled = vm.clipboard != null)
+        CtrlIconButton(Icons.Outlined.Download, tr(R.string.export), onExport, style = ghost)
         Box {
             var create by remember { mutableStateOf(false) }
-            CtrlIconButton(Icons.Outlined.Dashboard, "Create collage or HDR", { create = true }, style = ghost, enabled = sel.size >= 2)
+            CtrlIconButton(Icons.Outlined.Dashboard, tr(R.string.create_collage_or_hdr), { create = true }, style = ghost, enabled = sel.size >= 2)
             CtrlMenu(create, { create = false }) {
                 val ordered = vm.photos.filter { it.id in sel }.map { it.id }
-                CtrlMenuItem("Collage", Icons.Outlined.Dashboard, enabled = sel.size in 2..6) { create = false; vm.startCollage(ordered) }
+                CtrlMenuItem(tr(R.string.collage), Icons.Outlined.Dashboard, enabled = sel.size in 2..6) { create = false; vm.startCollage(ordered) }
                 val stills = vm.photos.filter { it.id in sel && !it.isVideo }.map { it.id }
-                CtrlMenuItem("Merge to HDR (${stills.size} photos)", Icons.Outlined.HdrOn, enabled = stills.size in 2..7) { create = false; vm.mergeHdr(stills) }
+                CtrlMenuItem(tr(R.string.merge_to_hdr_x_photos, stills.size), Icons.Outlined.HdrOn, enabled = stills.size in 2..7) { create = false; vm.mergeHdr(stills) }
                 val videos = vm.photos.filter { it.id in sel && it.isVideo }.map { it.id }
-                CtrlMenuItem("Make reel (${videos.size} videos)", Icons.Outlined.Movie, enabled = videos.size >= 2) { create = false; reelIds = videos }
+                CtrlMenuItem(tr(R.string.make_reel_x_videos, videos.size), Icons.Outlined.Movie, enabled = videos.size >= 2) { create = false; reelIds = videos }
             }
         }
-        CtrlIconButton(Icons.Outlined.Delete, "Remove", onDelete, style = ghost)
+        CtrlIconButton(Icons.Outlined.Delete, tr(R.string.remove), onDelete, style = ghost)
     }
 }
 
@@ -332,13 +334,13 @@ private fun EmptyState(onImport: () -> Unit) {
     val c = Ctrl.colors
     Surface(shape = CardShape, color = c.surface, border = BorderStroke(1.dp, c.border), modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            MonoLabel("Empty")
-            Text("No photos yet", style = CtrlType.title, color = c.text)
+            MonoLabel(tr(R.string.empty))
+            Text(tr(R.string.no_photos_yet), style = CtrlType.title, color = c.text)
             Text(
-                "Import from your gallery, take a photo, or share images into Lumen from any app. Originals are copied into private storage and never modified.",
+                tr(R.string.import_from_your_gallery_take_a),
                 color = c.muted,
             )
-            CtrlButton("Import photos", onClick = onImport, icon = Icons.Outlined.AddPhotoAlternate, style = CtrlButtonStyle.Accent)
+            CtrlButton(tr(R.string.import_photos), onClick = onImport, icon = Icons.Outlined.AddPhotoAlternate, style = CtrlButtonStyle.Accent)
         }
     }
 }
@@ -357,8 +359,8 @@ private fun Thumbnail(photo: Catalog.Photo, version: Int, selected: Boolean, mod
                     .background(c.bg.copy(alpha = 0.8f), RoundedCornerShape(6.dp)).padding(horizontal = 5.dp, vertical = 2.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                if (photo.meta.flag == 1) Icon(Icons.Outlined.CheckCircle, "Pick", tint = c.accent, modifier = Modifier.size(12.dp))
-                if (photo.meta.flag == -1) Icon(Icons.Outlined.Close, "Rejected", tint = c.muted, modifier = Modifier.size(12.dp))
+                if (photo.meta.flag == 1) Icon(Icons.Outlined.CheckCircle, tr(R.string.pick), tint = c.accent, modifier = Modifier.size(12.dp))
+                if (photo.meta.flag == -1) Icon(Icons.Outlined.Close, tr(R.string.rejected), tint = c.muted, modifier = Modifier.size(12.dp))
                 if (photo.meta.rating > 0) Text("★".repeat(photo.meta.rating), style = CtrlType.label, color = c.text)
             }
         }
@@ -368,7 +370,7 @@ private fun Thumbnail(photo: Catalog.Photo, version: Int, selected: Boolean, mod
                     .background(c.bg.copy(alpha = 0.8f), RoundedCornerShape(6.dp)).padding(horizontal = 5.dp, vertical = 2.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Icon(Icons.Outlined.PlayArrow, "Video", tint = c.text, modifier = Modifier.size(12.dp))
+                Icon(Icons.Outlined.PlayArrow, tr(R.string.video), tint = c.text, modifier = Modifier.size(12.dp))
                 val s = photo.meta.durationMs / 1000
                 Text("%d:%02d".format(s / 60, s % 60), style = CtrlType.label, color = c.text)
             }
@@ -381,7 +383,7 @@ private fun Thumbnail(photo: Catalog.Photo, version: Int, selected: Boolean, mod
         }
         if (selected) {
             Icon(
-                Icons.Outlined.CheckCircle, "Selected", tint = c.onAccent,
+                Icons.Outlined.CheckCircle, tr(R.string.selected), tint = c.onAccent,
                 modifier = Modifier.align(Alignment.TopEnd).padding(6.dp).background(c.accent, RoundedCornerShape(12.dp)).padding(2.dp).size(18.dp),
             )
         }
@@ -396,7 +398,7 @@ fun ConfirmDialog(title: String, text: String, confirm: String, onConfirm: () ->
         title = { Text(title, style = CtrlType.title, color = c.text) },
         text = { Text(text, color = c.muted) },
         confirmButton = { CtrlButton(confirm, onClick = { onConfirm(); onDismiss() }, style = CtrlButtonStyle.Accent) },
-        dismissButton = { CtrlButton("Cancel", onClick = onDismiss, style = CtrlButtonStyle.Ghost) },
+        dismissButton = { CtrlButton(tr(R.string.cancel), onClick = onDismiss, style = CtrlButtonStyle.Ghost) },
     )
 }
 
@@ -407,8 +409,8 @@ fun TextDialog(title: String, initial: String, confirm: String, onConfirm: (Stri
     AlertDialog(
         onDismissRequest = onDismiss, containerColor = c.surface, shape = CardShape,
         title = { Text(title, style = CtrlType.title, color = c.text) },
-        text = { CtrlTextField(text, { text = it.take(40) }, "Name", Modifier.fillMaxWidth()) },
+        text = { CtrlTextField(text, { text = it.take(40) }, tr(R.string.name), Modifier.fillMaxWidth()) },
         confirmButton = { CtrlButton(confirm, onClick = { onConfirm(text); onDismiss() }, style = CtrlButtonStyle.Accent) },
-        dismissButton = { CtrlButton("Cancel", onClick = onDismiss, style = CtrlButtonStyle.Ghost) },
+        dismissButton = { CtrlButton(tr(R.string.cancel), onClick = onDismiss, style = CtrlButtonStyle.Ghost) },
     )
 }

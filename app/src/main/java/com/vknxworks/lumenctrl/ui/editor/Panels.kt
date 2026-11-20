@@ -1,5 +1,7 @@
 package com.vknxworks.lumenctrl.ui.editor
 
+import com.vknxworks.lumenctrl.R
+import com.vknxworks.lumenctrl.tr
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectDragGestures
@@ -115,14 +117,14 @@ private fun PanelHeader(left: String, right: String? = null, rightAccent: Boolea
 fun PresetPanel(vm: LumenViewModel) {
     val active = Presets.byName(vm.params.preset)
     Column(Modifier.fillMaxSize()) {
-        PanelHeader("Presets", "${Presets.all.size} looks")
+        PanelHeader(tr(R.string.presets), tr(R.string.x_looks, Presets.all.size))
         Column(Modifier.padding(horizontal = 20.dp)) {
             if (active != null && active.values.isNotEmpty()) {
                 LabeledSlider(
-                    label = "${active.name} amount", valueText = "${(vm.params.presetAmount * 100).toInt()}",
+                    label = tr(R.string.x_amount, active.name), valueText = "${(vm.params.presetAmount * 100).toInt()}",
                     value = vm.params.presetAmount, range = 0f..2f, origin = 0f, changed = vm.params.presetAmount != 1f,
-                    onChange = { vm.setLiveParams(active.applyTo(vm.params, it), "Preset amount") },
-                    onDone = vm::commit, onReset = { vm.edit("Preset amount") { active.applyTo(it, 1f) } },
+                    onChange = { vm.setLiveParams(active.applyTo(vm.params, it), tr(R.string.preset_amount)) },
+                    onDone = vm::commit, onReset = { vm.edit(tr(R.string.preset_amount)) { active.applyTo(it, 1f) } },
                 )
             }
             FlowRow(
@@ -132,7 +134,7 @@ fun PresetPanel(vm: LumenViewModel) {
             ) {
                 Presets.all.forEach { preset ->
                     val selected = vm.params.preset == preset.name || (preset.values.isEmpty() && vm.params.preset == null && vm.params.values.isEmpty())
-                    CtrlChip(preset.name, selected, onClick = { vm.edit("Preset ${preset.name}") { preset.applyTo(it) } })
+                    CtrlChip(preset.name, selected, onClick = { vm.edit(tr(R.string.preset_x, preset.name)) { preset.applyTo(it) } })
                 }
             }
         }
@@ -167,7 +169,7 @@ fun EditPanel(vm: LumenViewModel, st: EditorState) {
                 val hdrOn = vm.params[Param.HDR_ON] >= 0.5f
                 val hasDn = vm.denoised != null
                 paramSections(vm, sliderParams(st.group).filter {
-                    (it.section != "HDR" || hdrOn) && (it != Param.AI_DENOISE || hasDn)
+                    (it.section != tr(R.string.hdr) || hdrOn) && (it != Param.AI_DENOISE || hasDn)
                 })
             }
         }
@@ -182,23 +184,23 @@ private fun GroupTools(vm: LumenViewModel, st: EditorState) {
     when (st.group) {
         Group.LIGHT -> Column {
             row {
-                CtrlButton("Auto", onClick = vm::autoTone, icon = Icons.Outlined.AutoFixHigh, style = CtrlButtonStyle.Accent)
-                MonoLabel("On-device · no AI service", Modifier.padding(top = 14.dp))
+                CtrlButton(tr(R.string.auto), onClick = vm::autoTone, icon = Icons.Outlined.AutoFixHigh, style = CtrlButtonStyle.Accent)
+                MonoLabel(tr(R.string.on_device_no_ai_service), Modifier.padding(top = 14.dp))
             }
             if (vm.openPhoto?.isVideo != true) HdrTools(vm, st) // HDR export is photo-only
 
         }
         Group.COLOR -> row {
             CtrlButton(
-                if (st.pickWhiteBalance) "Tap the photo" else "Pick white balance",
+                if (st.pickWhiteBalance) tr(R.string.tap_the_photo) else tr(R.string.pick_white_balance),
                 onClick = { st.pickWhiteBalance = !st.pickWhiteBalance }, icon = Icons.Outlined.Colorize,
                 selected = st.pickWhiteBalance,
             )
         }
         Group.BLUR -> row {
-            CtrlChip("Radial", vm.params[Param.BLUR_MODE] < 0.5f, onClick = { vm.edit("Blur mode") { it.with(Param.BLUR_MODE, 0f) } })
-            CtrlChip("Tilt-shift", vm.params[Param.BLUR_MODE] >= 0.5f, onClick = { vm.edit("Blur mode") { it.with(Param.BLUR_MODE, 1f) } })
-            CtrlChip("Set focus", st.pickFocus, onClick = { st.pickFocus = !st.pickFocus }, icon = Icons.Outlined.CenterFocusStrong)
+            CtrlChip(tr(R.string.radial), vm.params[Param.BLUR_MODE] < 0.5f, onClick = { vm.edit(tr(R.string.blur_mode)) { it.with(Param.BLUR_MODE, 0f) } })
+            CtrlChip(tr(R.string.tilt_shift), vm.params[Param.BLUR_MODE] >= 0.5f, onClick = { vm.edit(tr(R.string.blur_mode)) { it.with(Param.BLUR_MODE, 1f) } })
+            CtrlChip(tr(R.string.set_focus), st.pickFocus, onClick = { st.pickFocus = !st.pickFocus }, icon = Icons.Outlined.CenterFocusStrong)
         }
         Group.DETAIL -> if (vm.openPhoto?.isVideo != true) DenoiseTools(vm)
         else -> Unit
@@ -211,7 +213,7 @@ private fun DenoiseTools(vm: LumenViewModel) {
     val c = Ctrl.colors
     val progress = vm.denoiseProgress
     Column(Modifier.padding(top = 6.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        MonoLabel("AI DENOISE")
+        MonoLabel(tr(R.string.ai_denoise_2))
         if (progress != null) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 androidx.compose.material3.LinearProgressIndicator(
@@ -219,25 +221,25 @@ private fun DenoiseTools(vm: LumenViewModel) {
                     color = c.accent, trackColor = c.border,
                 )
                 MonoLabel("${(progress * 100).toInt()}%")
-                CtrlButton("Cancel", onClick = vm::cancelDenoise)
+                CtrlButton(tr(R.string.cancel), onClick = vm::cancelDenoise)
             }
             MonoLabel("${vm.denoiseModel?.label ?: ""} model · on device · keep the editor open")
         } else {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 CtrlButton(
-                    if (vm.denoised == null) "Quality" else "Redo · Quality",
+                    if (vm.denoised == null) tr(R.string.quality) else tr(R.string.redo_quality),
                     onClick = { vm.runDenoise(com.vknxworks.lumenctrl.edit.Denoiser.Model.QUALITY) },
                     icon = Icons.Outlined.AutoFixHigh, style = CtrlButtonStyle.Accent,
                 )
                 CtrlButton(
-                    if (vm.denoised == null) "Fast" else "Redo · Fast",
+                    if (vm.denoised == null) tr(R.string.fast) else tr(R.string.redo_fast),
                     onClick = { vm.runDenoise(com.vknxworks.lumenctrl.edit.Denoiser.Model.FAST) },
                 )
-                if (vm.denoised != null) CtrlButton("Remove", onClick = vm::removeDenoise)
+                if (vm.denoised != null) CtrlButton(tr(R.string.remove), onClick = vm::removeDenoise)
             }
             MonoLabel(
-                if (vm.denoised == null) "NAFNet (Quality) or U-Net (Fast) · runs offline, up to 4096 px"
-                else "Denoised base ready · blend it with Amount",
+                if (vm.denoised == null) tr(R.string.nafnet_quality_or_u_net_fast)
+                else tr(R.string.denoised_base_ready_blend_it_with),
                 color = if (vm.denoised != null) c.accentText else c.muted,
             )
         }
@@ -253,17 +255,17 @@ private fun HdrTools(vm: LumenViewModel, st: EditorState) {
     val supported = com.vknxworks.lumenctrl.render.Hdr.supported
     Column(Modifier.padding(top = 10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            CtrlChip("HDR", on, onClick = {
-                vm.edit(if (on) "HDR off" else "HDR on") { it.with(Param.HDR_ON, if (on) 0f else 1f) }
+            CtrlChip(tr(R.string.hdr), on, onClick = {
+                vm.edit(if (on) tr(R.string.hdr_off) else tr(R.string.hdr_on)) { it.with(Param.HDR_ON, if (on) 0f else 1f) }
                 if (on) { st.vizHdr = false; st.hdrView = false }
             })
-            if (on) CtrlChip("Visualize", st.vizHdr, onClick = { st.vizHdr = !st.vizHdr })
-            if (on && supported) CtrlChip("HDR view", st.hdrView, onClick = { st.hdrView = !st.hdrView })
+            if (on) CtrlChip(tr(R.string.visualize), st.vizHdr, onClick = { st.vizHdr = !st.vizHdr })
+            if (on && supported) CtrlChip(tr(R.string.hdr_view), st.hdrView, onClick = { st.hdrView = !st.hdrView })
         }
         val source = vm.sourceGain?.let { "Ultra HDR source · up to %.1f×".format(it.fullRatio) }
-        val screen = if (com.vknxworks.lumenctrl.render.Hdr.screenSupportsHdr(context)) "HDR screen" else "SDR screen"
+        val screen = if (com.vknxworks.lumenctrl.render.Hdr.screenSupportsHdr(context)) tr(R.string.hdr_screen) else tr(R.string.sdr_screen)
         val note = when {
-            !supported -> "HDR export needs Android 14"
+            !supported -> tr(R.string.hdr_export_needs_android_14)
             else -> listOfNotNull(source, screen).joinToString(" · ").ifBlank { null }
         }
         note?.let { MonoLabel(it, color = if (vm.sourceGain != null) c.accentText else c.muted) }
@@ -294,18 +296,18 @@ private fun CurvePanel(vm: LumenViewModel, st: EditorState) {
     LazyColumn(contentPadding = PaddingValues(start = 20.dp, end = 20.dp, bottom = 12.dp)) {
         item {
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                listOf("RGB", "Red", "Green", "Blue").forEachIndexed { i, name ->
+                listOf(tr(R.string.rgb), tr(R.string.red), tr(R.string.green), tr(R.string.blue)).forEachIndexed { i, name ->
                     CtrlChip(name, st.curveChannel == i, onClick = { st.curveChannel = i }, swatch = if (i == 0) null else channelColors[i])
                 }
                 Spacer(Modifier.weight(1f))
-                CtrlButton("Reset", onClick = {
-                    vm.edit("Reset curve") { it.copy(curves = it.curves.withChannel(st.curveChannel, com.vknxworks.lumenctrl.model.Curves.IDENTITY)) }
+                CtrlButton(tr(R.string.reset), onClick = {
+                    vm.edit(tr(R.string.reset_curve)) { it.copy(curves = it.curves.withChannel(st.curveChannel, com.vknxworks.lumenctrl.model.Curves.IDENTITY)) }
                 }, style = CtrlButtonStyle.Ghost)
             }
         }
         item {
             CurveEditor(vm, st.curveChannel, channelColors[st.curveChannel], Modifier.fillMaxWidth().height(180.dp).padding(top = 8.dp))
-            MonoLabel("Drag to shape · tap to add · double-tap a point to remove", Modifier.padding(top = 6.dp))
+            MonoLabel(tr(R.string.drag_to_shape_tap_to_add), Modifier.padding(top = 6.dp))
         }
         paramSections(vm, sliderParams(Group.CURVE))
     }
@@ -331,14 +333,14 @@ private fun CurveEditor(vm: LumenViewModel, channel: Int, color: Color, modifier
                             val list = params.curves.channel(channel)
                             val p = toPt(o, size.width.toFloat(), size.height.toFloat())
                             if (list.any { abs(it.x - p.x) < 0.04f } || list.size >= 12) return@detectTapGestures
-                            vm.edit("Curve point") { it.copy(curves = it.curves.withChannel(channel, list + p)) }
+                            vm.edit(tr(R.string.curve_point)) { it.copy(curves = it.curves.withChannel(channel, list + p)) }
                         },
                         onDoubleTap = { o ->
                             val list = params.curves.channel(channel)
                             val p = toPt(o, size.width.toFloat(), size.height.toFloat())
                             val i = list.indices.minByOrNull { abs(list[it].x - p.x) + abs(list[it].y - p.y) } ?: return@detectTapGestures
                             if (i == 0 || i == list.lastIndex) return@detectTapGestures
-                            vm.edit("Remove curve point") { it.copy(curves = it.curves.withChannel(channel, list.filterIndexed { k, _ -> k != i })) }
+                            vm.edit(tr(R.string.remove_curve_point)) { it.copy(curves = it.curves.withChannel(channel, list.filterIndexed { k, _ -> k != i })) }
                         },
                     )
                 }
@@ -353,7 +355,7 @@ private fun CurveEditor(vm: LumenViewModel, channel: Int, color: Color, modifier
                                 val p = toPt(o, w, h)
                                 if (list.size < 12 && list.none { abs(it.x - p.x) < 0.04f }) {
                                     val next = (list + p).sortedBy { it.x }
-                                    vm.setLiveParams(params.copy(curves = params.curves.withChannel(channel, next)), "Curve")
+                                    vm.setLiveParams(params.copy(curves = params.curves.withChannel(channel, next)), tr(R.string.curve))
                                     next.indexOf(p)
                                 } else -1
                             }
@@ -368,7 +370,7 @@ private fun CurveEditor(vm: LumenViewModel, channel: Int, color: Color, modifier
                             val hi = if (dragging == list.lastIndex) 1f else list[dragging + 1].x - 0.02f
                             val x = when (dragging) { 0 -> list[0].x; list.lastIndex -> list.last().x; else -> p.x.coerceIn(lo, hi) }
                             list[dragging] = CurvePoint(x, p.y)
-                            vm.setLiveParams(params.copy(curves = params.curves.withChannel(channel, list)), "Curve")
+                            vm.setLiveParams(params.copy(curves = params.curves.withChannel(channel, list)), tr(R.string.curve))
                         },
                         onDragEnd = { dragging = -1; vm.commit() },
                         onDragCancel = { dragging = -1; vm.commit() },
@@ -426,9 +428,9 @@ fun MasksPanel(vm: LumenViewModel, st: EditorState) {
         }
         if (sel == null) {
             Column(Modifier.padding(horizontal = 24.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text("Local adjustments", style = com.vknxworks.lumenctrl.ui.ctrl.CtrlType.title, color = c.text)
+                Text(tr(R.string.local_adjustments), style = com.vknxworks.lumenctrl.ui.ctrl.CtrlType.title, color = c.text)
                 Text(
-                    "Select a subject, sky, background or people parts with on-device AI, or add a gradient, luminance or color range. Each mask has its own exposure, color and detail sliders.",
+                    tr(R.string.select_a_subject_sky_background_or),
                     color = c.muted,
                 )
             }
@@ -443,41 +445,41 @@ fun MasksPanel(vm: LumenViewModel, st: EditorState) {
         LazyColumn(contentPadding = PaddingValues(start = 20.dp, end = 20.dp, bottom = 12.dp)) {
             item {
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    CtrlChip("Invert", sel.invert, icon = Icons.Outlined.InvertColors, onClick = { update("Invert mask", false) { it.copy(invert = !it.invert) } })
+                    CtrlChip(tr(R.string.invert), sel.invert, icon = Icons.Outlined.InvertColors, onClick = { update(tr(R.string.invert_mask), false) { it.copy(invert = !it.invert) } })
                     CtrlChip(
-                        "Overlay", st.showMaskOverlay,
+                        tr(R.string.overlay), st.showMaskOverlay,
                         icon = if (st.showMaskOverlay) Icons.Outlined.Visibility else Icons.Outlined.VisibilityOff,
                         onClick = { st.showMaskOverlay = !st.showMaskOverlay },
                     )
-                    CtrlChip("Delete", false, icon = Icons.Outlined.Delete, onClick = {
-                        vm.edit("Delete mask") { p -> p.copy(masks = p.masks.filterIndexed { k, _ -> k != i }) }
+                    CtrlChip(tr(R.string.delete), false, icon = Icons.Outlined.Delete, onClick = {
+                        vm.edit(tr(R.string.delete_mask)) { p -> p.copy(masks = p.masks.filterIndexed { k, _ -> k != i }) }
                         st.selectedMask = -1
                     })
                 }
             }
-            item { MonoLabel("Mask", Modifier.padding(start = 4.dp, top = 12.dp)) }
+            item { MonoLabel(tr(R.string.mask), Modifier.padding(start = 4.dp, top = 12.dp)) }
             when (sel.type) {
                 MaskType.LUMA -> {
-                    item { LabeledSlider("Range low", "${(sel.x1 * 100).toInt()}", sel.x1, 0f..1f, 0f, true, { v -> update("Mask range", true) { it.copy(x1 = v.coerceAtMost(it.x2)) } }, vm::commit, {}) }
-                    item { LabeledSlider("Range high", "${(sel.x2 * 100).toInt()}", sel.x2, 0f..1f, 0f, true, { v -> update("Mask range", true) { it.copy(x2 = v.coerceAtLeast(it.x1)) } }, vm::commit, {}) }
+                    item { LabeledSlider(tr(R.string.range_low), "${(sel.x1 * 100).toInt()}", sel.x1, 0f..1f, 0f, true, { v -> update(tr(R.string.mask_range), true) { it.copy(x1 = v.coerceAtMost(it.x2)) } }, vm::commit, {}) }
+                    item { LabeledSlider(tr(R.string.range_high), "${(sel.x2 * 100).toInt()}", sel.x2, 0f..1f, 0f, true, { v -> update(tr(R.string.mask_range), true) { it.copy(x2 = v.coerceAtLeast(it.x1)) } }, vm::commit, {}) }
                 }
                 MaskType.COLOR -> {
-                    item { LabeledSlider("Hue", "${(sel.x1 * 360).toInt()}°", sel.x1, 0f..1f, 0f, true, { v -> update("Mask hue", true) { it.copy(x1 = v) } }, vm::commit, {}, trackBrush = HueBrush) }
-                    item { LabeledSlider("Range", "${(sel.x2 * 100).toInt()}", sel.x2, 0.01f..0.5f, 0.01f, true, { v -> update("Mask range", true) { it.copy(x2 = v) } }, vm::commit, {}) }
+                    item { LabeledSlider(tr(R.string.hue), "${(sel.x1 * 360).toInt()}°", sel.x1, 0f..1f, 0f, true, { v -> update(tr(R.string.mask_hue), true) { it.copy(x1 = v) } }, vm::commit, {}, trackBrush = HueBrush) }
+                    item { LabeledSlider(tr(R.string.range), "${(sel.x2 * 100).toInt()}", sel.x2, 0.01f..0.5f, 0.01f, true, { v -> update(tr(R.string.mask_range), true) { it.copy(x2 = v) } }, vm::commit, {}) }
                 }
                 else -> Unit
             }
             if (sel.type != MaskType.LINEAR) {
-                item { LabeledSlider("Feather", "${(sel.feather * 100).toInt()}", sel.feather, 0f..1f, 0f, true, { v -> update("Mask feather", true) { it.copy(feather = v) } }, vm::commit, {}) }
+                item { LabeledSlider(tr(R.string.feather), "${(sel.feather * 100).toInt()}", sel.feather, 0f..1f, 0f, true, { v -> update(tr(R.string.mask_feather), true) { it.copy(feather = v) } }, vm::commit, {}) }
             }
-            item { MonoLabel("Adjust", Modifier.padding(start = 4.dp, top = 12.dp)) }
+            item { MonoLabel(tr(R.string.adjust), Modifier.padding(start = 4.dp, top = 12.dp)) }
             items(MaskAdj.entries) { a ->
                 val v = sel[a]
                 LabeledSlider(
                     a.label, a.format(v), v, a.min..a.max, 0f, v != 0f,
                     onChange = { nv -> update(a.label, true) { it.with(a, nv) } },
                     onDone = vm::commit,
-                    onReset = { update("Reset ${a.label}", false) { it.with(a, 0f) } },
+                    onReset = { update(tr(R.string.reset_x, a.label), false) { it.with(a, 0f) } },
                 )
             }
         }
@@ -497,33 +499,33 @@ fun HealPanel(vm: LumenViewModel, st: EditorState) {
         if (live) vm.setLiveParams(next, label) else vm.edit(label) { next }
     }
     Column(Modifier.fillMaxSize()) {
-        PanelHeader("Heal & clone", "${spots.size} spots", spots.isNotEmpty())
+        PanelHeader(tr(R.string.heal_and_clone), tr(R.string.x_spots, spots.size), spots.isNotEmpty())
         LazyColumn(contentPadding = PaddingValues(start = 20.dp, end = 20.dp, bottom = 12.dp)) {
             item {
                 LabeledSlider(
-                    "Brush size", "${(st.healRadius * 1000).toInt()}", st.healRadius, 0.01f..0.15f, 0.01f, false,
+                    tr(R.string.brush_size), "${(st.healRadius * 1000).toInt()}", st.healRadius, 0.01f..0.15f, 0.01f, false,
                     onChange = { st.healRadius = it }, onDone = {}, onReset = { st.healRadius = 0.04f },
                 )
-                MonoLabel("Tap a spot to heal · drag circles to move source or target", Modifier.padding(start = 4.dp, top = 4.dp))
+                MonoLabel(tr(R.string.tap_a_spot_to_heal_drag), Modifier.padding(start = 4.dp, top = 4.dp))
             }
             if (sel != null) {
                 item {
                     Row(Modifier.padding(top = 12.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        CtrlChip("Heal", !sel.clone, onClick = { update("Heal mode", false) { it.copy(clone = false) } })
-                        CtrlChip("Clone", sel.clone, onClick = { update("Clone mode", false) { it.copy(clone = true) } })
-                        CtrlChip("Delete", false, icon = Icons.Outlined.Delete, onClick = {
-                            vm.edit("Delete spot") { p -> p.copy(spots = p.spots.filterIndexed { k, _ -> k != i }) }
+                        CtrlChip(tr(R.string.heal), !sel.clone, onClick = { update(tr(R.string.heal_mode), false) { it.copy(clone = false) } })
+                        CtrlChip(tr(R.string.clone), sel.clone, onClick = { update(tr(R.string.clone_mode), false) { it.copy(clone = true) } })
+                        CtrlChip(tr(R.string.delete), false, icon = Icons.Outlined.Delete, onClick = {
+                            vm.edit(tr(R.string.delete_spot)) { p -> p.copy(spots = p.spots.filterIndexed { k, _ -> k != i }) }
                             st.selectedSpot = -1
                         })
                     }
                 }
-                item { LabeledSlider("Size", "${(sel.radius * 1000).toInt()}", sel.radius, 0.005f..0.2f, 0.005f, true, { v -> update("Spot size", true) { it.copy(radius = v) } }, vm::commit, {}) }
-                item { LabeledSlider("Feather", "${(sel.feather * 100).toInt()}", sel.feather, 0f..1f, 0f, true, { v -> update("Spot feather", true) { it.copy(feather = v) } }, vm::commit, {}) }
-                item { LabeledSlider("Opacity", "${(sel.opacity * 100).toInt()}", sel.opacity, 0f..1f, 0f, true, { v -> update("Spot opacity", true) { it.copy(opacity = v) } }, vm::commit, {}) }
+                item { LabeledSlider(tr(R.string.size), "${(sel.radius * 1000).toInt()}", sel.radius, 0.005f..0.2f, 0.005f, true, { v -> update(tr(R.string.spot_size), true) { it.copy(radius = v) } }, vm::commit, {}) }
+                item { LabeledSlider(tr(R.string.feather), "${(sel.feather * 100).toInt()}", sel.feather, 0f..1f, 0f, true, { v -> update(tr(R.string.spot_feather), true) { it.copy(feather = v) } }, vm::commit, {}) }
+                item { LabeledSlider(tr(R.string.opacity), "${(sel.opacity * 100).toInt()}", sel.opacity, 0f..1f, 0f, true, { v -> update(tr(R.string.spot_opacity), true) { it.copy(opacity = v) } }, vm::commit, {}) }
             }
             if (spots.isNotEmpty()) {
                 item {
-                    CtrlButton("Clear all spots", onClick = { vm.edit("Clear spots") { it.copy(spots = emptyList()) }; st.selectedSpot = -1 },
+                    CtrlButton(tr(R.string.clear_all_spots), onClick = { vm.edit(tr(R.string.clear_spots)) { it.copy(spots = emptyList()) }; st.selectedSpot = -1 },
                         style = CtrlButtonStyle.Ghost, modifier = Modifier.padding(top = 8.dp))
                 }
             }
@@ -542,7 +544,7 @@ fun CropPanel(vm: LumenViewModel) {
                 items(AspectLock.entries) { lock ->
                     CtrlChip(lock.label, vm.params.cropAspect == lock.key, onClick = {
                         if (bmp == null) return@CtrlChip
-                        vm.edit("Aspect ${lock.label}") { p ->
+                        vm.edit(tr(R.string.aspect_x, lock.label)) { p ->
                             val fr = lockRatio(lock, Geometry.frameAspect(p, bmp.width, bmp.height))
                             p.copy(cropAspect = lock.key, crop = fitCrop(p.crop, fr))
                         }
@@ -552,12 +554,12 @@ fun CropPanel(vm: LumenViewModel) {
         }
         item {
             Row(Modifier.padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                CtrlChip("Rotate", false, icon = Icons.Outlined.Rotate90DegreesCw, onClick = {
-                    vm.edit("Rotate") { p -> p.copy(quarterTurns = (p.quarterTurns + 1) % 4, crop = com.vknxworks.lumenctrl.model.CropRect.FULL) }
+                CtrlChip(tr(R.string.rotate), false, icon = Icons.Outlined.Rotate90DegreesCw, onClick = {
+                    vm.edit(tr(R.string.rotate)) { p -> p.copy(quarterTurns = (p.quarterTurns + 1) % 4, crop = com.vknxworks.lumenctrl.model.CropRect.FULL) }
                 })
-                CtrlChip("Flip", vm.params.flipH, icon = Icons.Outlined.Flip, onClick = { vm.edit("Flip") { it.copy(flipH = !it.flipH) } })
-                CtrlChip("Auto", false, icon = Icons.Outlined.Straighten, onClick = vm::autoStraighten)
-                CtrlChip("Reset", false, onClick = { vm.edit("Reset geometry") { it.resetGeometry() } })
+                CtrlChip(tr(R.string.flip), vm.params.flipH, icon = Icons.Outlined.Flip, onClick = { vm.edit(tr(R.string.flip)) { it.copy(flipH = !it.flipH) } })
+                CtrlChip(tr(R.string.auto), false, icon = Icons.Outlined.Straighten, onClick = vm::autoStraighten)
+                CtrlChip(tr(R.string.reset), false, onClick = { vm.edit(tr(R.string.reset_geometry)) { it.resetGeometry() } })
             }
         }
         paramSections(vm, sliderParams(Group.GEOMETRY))

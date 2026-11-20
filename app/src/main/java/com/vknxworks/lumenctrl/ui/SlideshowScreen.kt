@@ -1,5 +1,7 @@
 package com.vknxworks.lumenctrl.ui
 
+import com.vknxworks.lumenctrl.R
+import com.vknxworks.lumenctrl.tr
 import android.graphics.Bitmap
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.Crossfade
@@ -88,11 +90,11 @@ fun SlideshowScreen(vm: LumenViewModel) {
                 Modifier.fillMaxWidth().systemBarsPadding().padding(16.dp),
                 verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                CtrlIconButton(Icons.AutoMirrored.Outlined.ArrowBack, "Close slideshow", vm::backToLibrary)
+                CtrlIconButton(Icons.AutoMirrored.Outlined.ArrowBack, tr(R.string.close_slideshow), vm::backToLibrary)
                 MonoLabel("${index + 1} / ${ids.size}", color = Color.White)
                 Spacer(Modifier.weight(1f))
                 listOf(2, 4, 8).forEach { s -> CtrlChip("${s}s", seconds == s, onClick = { seconds = s }) }
-                CtrlIconButton(if (playing) Icons.Outlined.Pause else Icons.Outlined.PlayArrow, if (playing) "Pause" else "Play", { playing = !playing }, style = CtrlButtonStyle.Accent)
+                CtrlIconButton(if (playing) Icons.Outlined.Pause else Icons.Outlined.PlayArrow, if (playing) tr(R.string.pause) else tr(R.string.play), { playing = !playing }, style = CtrlButtonStyle.Accent)
             }
         }
     }

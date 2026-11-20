@@ -1,5 +1,7 @@
 package com.vknxworks.lumenctrl.ui
 
+import com.vknxworks.lumenctrl.R
+import com.vknxworks.lumenctrl.tr
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -28,7 +30,7 @@ import com.vknxworks.lumenctrl.ui.ctrl.CtrlToggle
 import com.vknxworks.lumenctrl.ui.ctrl.LabeledSlider
 import com.vknxworks.lumenctrl.ui.ctrl.MonoLabel
 
-private val SIZES = listOf<Pair<String, Int?>>("Full" to null, "4096" to 4096, "2048" to 2048, "1080" to 1080)
+private val SIZES = listOf<Pair<String, Int?>>(tr(R.string.full) to null, "4096" to 4096, "2048" to 2048, "1080" to 1080)
 
 /** Export options for one or many photos: format, size, metadata policy, watermark, edit record. */
 @Composable
@@ -37,43 +39,43 @@ fun ExportSheet(initial: ExportOptions, count: Int, onDismiss: () -> Unit, onExp
     var watermarkOn by remember { mutableStateOf(initial.watermark != null) }
     var watermark by remember { mutableStateOf(initial.watermark ?: "") }
 
-    CtrlSheet(if (count == 1) "Export" else "Export $count photos", onDismiss) {
-        MonoLabel("Format")
+    CtrlSheet(if (count == 1) tr(R.string.export) else tr(R.string.export_x_photos, count), onDismiss) {
+        MonoLabel(tr(R.string.format))
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             ExportFormat.entries.forEach { f -> CtrlChip(f.label, o.format == f, onClick = { o = o.copy(format = f) }) }
         }
         if (o.format != ExportFormat.PNG) {
             LabeledSlider(
-                "Quality", "${o.quality}", o.quality.toFloat(), 50f..100f, 50f, false,
+                tr(R.string.quality), "${o.quality}", o.quality.toFloat(), 50f..100f, 50f, false,
                 onChange = { o = o.copy(quality = it.toInt()) }, onDone = {}, onReset = { o = o.copy(quality = 92) },
             )
         }
-        MonoLabel("Long edge")
+        MonoLabel(tr(R.string.long_edge))
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             SIZES.forEach { (label, v) -> CtrlChip(label, o.maxDim == v, onClick = { o = o.copy(maxDim = v) }) }
         }
-        MonoLabel("Metadata")
+        MonoLabel(tr(R.string.metadata))
         LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             items(MetadataMode.entries) { m -> CtrlChip(m.label, o.metadata == m, onClick = { o = o.copy(metadata = m) }) }
         }
-        CtrlRow("Watermark", "Text in the bottom-right corner") {
-            CtrlToggle(watermarkOn, { watermarkOn = it }, "Watermark")
+        CtrlRow(tr(R.string.watermark), tr(R.string.text_in_the_bottom_right_corner)) {
+            CtrlToggle(watermarkOn, { watermarkOn = it }, tr(R.string.watermark))
         }
-        if (watermarkOn) CtrlTextField(watermark, { watermark = it.take(60) }, "© Your name", Modifier.fillMaxWidth())
-        CtrlRow("Embed edit record", "Stores the edit settings in the file's EXIF") {
-            CtrlToggle(o.embedEditRecord, { o = o.copy(embedEditRecord = it) }, "Embed edit record")
+        if (watermarkOn) CtrlTextField(watermark, { watermark = it.take(60) }, tr(R.string.your_name), Modifier.fillMaxWidth())
+        CtrlRow(tr(R.string.embed_edit_record), tr(R.string.stores_the_edit_settings_in_the)) {
+            CtrlToggle(o.embedEditRecord, { o = o.copy(embedEditRecord = it) }, tr(R.string.embed_edit_record))
         }
         if (com.vknxworks.lumenctrl.render.Hdr.supported && o.format == ExportFormat.JPEG) {
-            CtrlRow("Ultra HDR", "Adds a gain map for HDR screens when the edit uses HDR") {
-                CtrlToggle(o.hdr, { o = o.copy(hdr = it) }, "Ultra HDR")
+            CtrlRow(tr(R.string.ultra_hdr), tr(R.string.adds_a_gain_map_for_hdr)) {
+                CtrlToggle(o.hdr, { o = o.copy(hdr = it) }, tr(R.string.ultra_hdr))
             }
         }
         val final = o.copy(watermark = watermark.takeIf { watermarkOn && it.isNotBlank() })
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-            CtrlButton("Save to gallery", onClick = { onExport(final, false) }, icon = Icons.Outlined.Download, style = CtrlButtonStyle.Accent, modifier = Modifier.weight(1f))
-            CtrlButton("Share", onClick = { onExport(final, true) }, icon = Icons.Outlined.Share)
+            CtrlButton(tr(R.string.save_to_gallery), onClick = { onExport(final, false) }, icon = Icons.Outlined.Download, style = CtrlButtonStyle.Accent, modifier = Modifier.weight(1f))
+            CtrlButton(tr(R.string.share), onClick = { onExport(final, true) }, icon = Icons.Outlined.Share)
         }
-        MonoLabel("Rendered on this device · nothing is uploaded")
+        MonoLabel(tr(R.string.rendered_on_this_device_nothing_is))
     }
 }
 

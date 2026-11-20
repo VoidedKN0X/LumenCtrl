@@ -1,5 +1,7 @@
 package com.vknxworks.lumenctrl.ui
 
+import com.vknxworks.lumenctrl.R
+import com.vknxworks.lumenctrl.tr
 import androidx.activity.compose.BackHandler
 import androidx.biometric.BiometricManager
 import androidx.compose.foundation.BorderStroke
@@ -56,70 +58,70 @@ fun SettingsScreen(vm: LumenViewModel) {
         verticalArrangement = Arrangement.spacedBy(22.dp),
     ) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            CtrlIconButton(Icons.Outlined.Close, "Close settings", vm::backToLibrary)
+            CtrlIconButton(Icons.Outlined.Close, tr(R.string.close_settings), vm::backToLibrary)
             Spacer(Modifier.weight(1f))
-            MonoLabel("Settings")
+            MonoLabel(tr(R.string.settings))
             Spacer(Modifier.weight(1f))
             Spacer(Modifier.size(44.dp))
         }
 
-        Section("Privacy") {
-            CtrlRow("App lock", if (canLock) "Fingerprint, face or screen lock on open" else "Set a screen lock in Android settings first") {
-                CtrlToggle(s.appLock, { if (canLock || !it) s.updateAppLock(it) }, "App lock")
+        Section(tr(R.string.privacy)) {
+            CtrlRow(tr(R.string.app_lock), if (canLock) tr(R.string.fingerprint_face_or_screen_lock_on) else tr(R.string.set_a_screen_lock_in_android)) {
+                CtrlToggle(s.appLock, { if (canLock || !it) s.updateAppLock(it) }, tr(R.string.app_lock))
             }
             Divider()
-            CtrlRow("Hide in screenshots", "Blocks screenshots and screen recording") {
-                CtrlToggle(s.hideInScreenshots, s::updateHideInScreenshots, "Hide in screenshots")
+            CtrlRow(tr(R.string.hide_in_screenshots), tr(R.string.blocks_screenshots_and_screen_recording)) {
+                CtrlToggle(s.hideInScreenshots, s::updateHideInScreenshots, tr(R.string.hide_in_screenshots))
             }
             Divider()
-            CtrlRow("Hide in recent apps", "Blanks the app switcher preview") {
-                CtrlToggle(s.hideInRecents, s::updateHideInRecents, "Hide in recent apps")
+            CtrlRow(tr(R.string.hide_in_recent_apps), tr(R.string.blanks_the_app_switcher_preview)) {
+                CtrlToggle(s.hideInRecents, s::updateHideInRecents, tr(R.string.hide_in_recent_apps))
             }
         }
 
-        Section("Look") {
+        Section(tr(R.string.look)) {
             Row(Modifier.padding(16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 ACCENTS.forEachIndexed { i, a -> CtrlChip(a.name, s.accent == i, onClick = { s.updateAccent(i) }, swatch = a.dark) }
             }
         }
 
-        Section("Storage") {
-            CtrlRow("Library", "${vm.allPhotos.size} photos · ${"%.1f".format(storage / 1e6)} MB in private app storage")
+        Section(tr(R.string.storage)) {
+            CtrlRow(tr(R.string.library), "${vm.allPhotos.size} photos · ${"%.1f".format(storage / 1e6)} MB in private app storage")
             Divider()
-            CtrlRow("Exports", "Pictures/Lumen · location removed by default")
+            CtrlRow(tr(R.string.exports), tr(R.string.pictures_lumen_location_removed_by_default))
         }
 
-        Section("About") {
-            CtrlRow("Network", "None. LumenCtrl has no internet permission; Android blocks all network access.")
+        Section(tr(R.string.about)) {
+            CtrlRow(tr(R.string.network), tr(R.string.none_lumenctrl_has_no_internet_permission))
             Divider()
-            CtrlRow("Accounts", "None. No sign-in, no cloud, no Adobe or Google services.")
+            CtrlRow(tr(R.string.accounts), tr(R.string.none_no_sign_in_no_cloud))
             Divider()
-            CtrlRow("AI masks", "DeepLab v3 and Selfie Multiclass (MediaPipe, Apache 2.0) on TensorFlow Lite. Bundled; runs on this phone.")
+            CtrlRow(tr(R.string.ai_masks), tr(R.string.deeplab_v3_and_selfie_multiclass_mediapipe))
             Divider()
-            CtrlRow("AI Denoise", "NAFNet and U-Net models from Raspberry Pi's AI_denoise (BSD-2-Clause, © 2025 Raspberry Pi Ltd). Bundled; runs on this phone.")
+            CtrlRow(tr(R.string.ai_denoise), tr(R.string.nafnet_and_u_net_models_from))
             Divider()
-            CtrlRow("Fonts", "Space Grotesk and JetBrains Mono, SIL Open Font License")
+            CtrlRow(tr(R.string.fonts), tr(R.string.space_grotesk_and_jetbrains_mono_sil))
             Divider()
-            CtrlRow("Licence", "GPL-3.0 · source at github.com/VoidedKN0X/LumenCtrl")
+            CtrlRow(tr(R.string.licence), tr(R.string.gpl_3_0_source_at_github))
             Divider()
             val ctx = androidx.compose.ui.platform.LocalContext.current
             val version = remember { runCatching { ctx.packageManager.getPackageInfo(ctx.packageName, 0).versionName }.getOrNull() ?: "?" }
-            CtrlRow("Version", "LumenCtrl $version · VKNXWorks Ctrl series")
+            CtrlRow(tr(R.string.version), tr(R.string.lumenctrl_x_vknxworks_ctrl_series, version))
         }
 
-        Section("Quick guide") {
+        Section(tr(R.string.quick_guide)) {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 listOf(
-                    "Library: long-press to select · batch rate, flag, album, paste, export, collage",
-                    "Editor: pinch or double-tap to zoom · hold the compare button for the original",
-                    "Sliders: double-tap a label to reset",
-                    "Masks: drag handles on the photo · tap to sample luminance or color ranges",
-                    "Heal: tap a blemish · drag circles to move source or target",
-                    "Share any image into Lumen from other apps",
+                    tr(R.string.library_long_press_to_select_batch),
+                    tr(R.string.editor_pinch_or_double_tap_to),
+                    tr(R.string.sliders_double_tap_a_label_to),
+                    tr(R.string.masks_drag_handles_on_the_photo),
+                    tr(R.string.heal_tap_a_blemish_drag_circles),
+                    tr(R.string.share_any_image_into_lumen_from),
                 ).forEach { Text(it, style = CtrlType.value.copy(fontFamily = com.vknxworks.lumenctrl.ui.ctrl.SpaceGrotesk), color = c.muted) }
             }
         }
-        MonoLabel("Offline · telemetry-free · on-device GPU", Modifier.fillMaxWidth().padding(bottom = 24.dp))
+        MonoLabel(tr(R.string.offline_telemetry_free_on_device_gpu), Modifier.fillMaxWidth().padding(bottom = 24.dp))
     }
 }
 

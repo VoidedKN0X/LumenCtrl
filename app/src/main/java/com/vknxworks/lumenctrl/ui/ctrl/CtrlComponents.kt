@@ -1,5 +1,7 @@
 package com.vknxworks.lumenctrl.ui.ctrl
 
+import com.vknxworks.lumenctrl.R
+import com.vknxworks.lumenctrl.tr
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -304,7 +306,7 @@ fun CtrlToggle(checked: Boolean, onChange: (Boolean) -> Unit, contentDescription
         color = if (checked) c.accent else c.track,
         modifier = modifier.size(52.dp, 32.dp).semantics {
             this.contentDescription = contentDescription
-            this.stateDescription = if (checked) "On" else "Off"
+            this.stateDescription = if (checked) tr(R.string.on) else tr(R.string.off)
         },
     ) {
         Box(Modifier.padding(4.dp), contentAlignment = if (checked) Alignment.CenterEnd else Alignment.CenterStart) {

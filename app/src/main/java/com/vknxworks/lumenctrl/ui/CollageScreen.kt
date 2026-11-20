@@ -1,5 +1,7 @@
 package com.vknxworks.lumenctrl.ui
 
+import com.vknxworks.lumenctrl.R
+import com.vknxworks.lumenctrl.tr
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
@@ -112,7 +114,7 @@ fun CollageScreen(vm: LumenViewModel) {
     var radius by remember { mutableFloatStateOf(0.01f) }
     var bgIndex by remember { mutableIntStateOf(0) }
     var preview by remember { mutableStateOf<Bitmap?>(null) }
-    val bgs = listOf("Black" to android.graphics.Color.BLACK, "White" to android.graphics.Color.WHITE, "Accent" to c.accent.toArgb())
+    val bgs = listOf(tr(R.string.black) to android.graphics.Color.BLACK, tr(R.string.white) to android.graphics.Color.WHITE, tr(R.string.accent) to c.accent.toArgb())
     BackHandler { vm.backToLibrary() }
 
     LaunchedEffect(ids) {
@@ -129,13 +131,13 @@ fun CollageScreen(vm: LumenViewModel) {
 
     Column(Modifier.fillMaxSize().background(c.bg).systemBarsPadding()) {
         Row(Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-            CtrlIconButton(Icons.AutoMirrored.Outlined.ArrowBack, "Back to library", vm::backToLibrary)
+            CtrlIconButton(Icons.AutoMirrored.Outlined.ArrowBack, tr(R.string.back_to_library), vm::backToLibrary)
             Spacer(Modifier.padding(6.dp))
             Column(Modifier.weight(1f)) {
-                MonoLabel("Collage")
-                Text("${ids.size} photos", style = CtrlType.title, color = c.text)
+                MonoLabel(tr(R.string.collage))
+                Text(tr(R.string.x_photos, ids.size), style = CtrlType.title, color = c.text)
             }
-            CtrlButton("Save", icon = Icons.Outlined.Download, style = CtrlButtonStyle.Accent, onClick = {
+            CtrlButton(tr(R.string.save), icon = Icons.Outlined.Download, style = CtrlButtonStyle.Accent, onClick = {
                 if (images.size != ids.size) return@CtrlButton
                 val a = ASPECTS[aspect].second
                 val h = 3000; val w = (h * a).toInt()
@@ -148,17 +150,17 @@ fun CollageScreen(vm: LumenViewModel) {
             else Image(p.asImageBitmap(), androidx.compose.ui.res.stringResource(com.vknxworks.lumenctrl.R.string.collage_preview), contentScale = ContentScale.Fit, modifier = Modifier.fillMaxSize())
         }
         Column(Modifier.padding(horizontal = 20.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            MonoLabel("Layout")
+            MonoLabel(tr(R.string.layout))
             LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                itemsIndexed(layouts) { i, _ -> CtrlChip("Layout ${i + 1}", template % layouts.size == i, onClick = { template = i }) }
+                itemsIndexed(layouts) { i, _ -> CtrlChip(tr(R.string.layout_x, i + 1), template % layouts.size == i, onClick = { template = i }) }
             }
-            MonoLabel("Shape")
+            MonoLabel(tr(R.string.shape))
             LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 itemsIndexed(ASPECTS) { i, (label, _) -> CtrlChip(label, aspect == i, onClick = { aspect = i }) }
                 itemsIndexed(bgs) { i, (label, _) -> CtrlChip(label, bgIndex == i, onClick = { bgIndex = i }) }
             }
-            LabeledSlider("Spacing", "${(gap * 1000).toInt()}", gap, 0f..0.03f, 0f, gap > 0f, { gap = it }, {}, { gap = 0.01f })
-            LabeledSlider("Corners", "${(radius * 1000).toInt()}", radius, 0f..0.05f, 0f, radius > 0f, { radius = it }, {}, { radius = 0.01f })
+            LabeledSlider(tr(R.string.spacing), "${(gap * 1000).toInt()}", gap, 0f..0.03f, 0f, gap > 0f, { gap = it }, {}, { gap = 0.01f })
+            LabeledSlider(tr(R.string.corners), "${(radius * 1000).toInt()}", radius, 0f..0.05f, 0f, radius > 0f, { radius = it }, {}, { radius = 0.01f })
         }
     }
 }

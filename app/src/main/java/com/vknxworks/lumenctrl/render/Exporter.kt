@@ -1,5 +1,6 @@
 package com.vknxworks.lumenctrl.render
 
+import com.vknxworks.lumenctrl.tr
 import android.content.ContentValues
 import android.content.Context
 import android.graphics.Bitmap
@@ -29,7 +30,7 @@ enum class ExportFormat(val label: String, val ext: String, val mime: String) {
 }
 
 enum class MetadataMode(val label: String) {
-    NO_LOCATION("Keep, remove location"), ALL("Keep all"), NONE("Strip all"),
+    NO_LOCATION(tr(R.string.keep_remove_location)), ALL(tr(R.string.keep_all)), NONE(tr(R.string.strip_all)),
 }
 
 data class ExportOptions(

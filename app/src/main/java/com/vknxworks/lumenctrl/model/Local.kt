@@ -1,5 +1,7 @@
 package com.vknxworks.lumenctrl.model
 
+import com.vknxworks.lumenctrl.R
+import com.vknxworks.lumenctrl.tr
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -22,7 +24,7 @@ data class CropRect(val l: Float = 0f, val t: Float = 0f, val r: Float = 1f, val
 
 /** Aspect locks for the crop tool. ratio = width / height in pixels; null = free, 0 = original. */
 enum class AspectLock(val key: String, val label: String, val ratio: Float?) {
-    FREE("free", "Free", null), ORIGINAL("original", "Original", 0f),
+    FREE("free", tr(R.string.free), null), ORIGINAL("original", tr(R.string.original), 0f),
     SQUARE("1:1", "1:1", 1f), PORTRAIT("4:5", "4:5", 0.8f), CLASSIC("3:2", "3:2", 1.5f),
     WIDE("16:9", "16:9", 16f / 9f), STORY("9:16", "9:16", 9f / 16f);
 
@@ -69,21 +71,21 @@ data class Curves(
     }
 }
 
-enum class MaskType(val label: String) { LINEAR("Linear"), RADIAL("Radial"), LUMA("Luminance"), COLOR("Color"), AI("AI") }
+enum class MaskType(val label: String) { LINEAR(tr(R.string.linear)), RADIAL(tr(R.string.radial)), LUMA(tr(R.string.luminance)), COLOR(tr(R.string.color)), AI(tr(R.string.ai)) }
 
 /** What an offline AI mask selects (Lightroom's Select Subject / Sky / People). */
 enum class AiKind(val label: String) {
-    SUBJECT("Subject"), SKY("Sky"), BACKGROUND("Background"),
-    PEOPLE("People"), FACE("Face skin"), BODY("Body skin"), HAIR("Hair"), CLOTHES("Clothes"),
+    SUBJECT(tr(R.string.subject)), SKY(tr(R.string.sky)), BACKGROUND(tr(R.string.background)),
+    PEOPLE(tr(R.string.people)), FACE(tr(R.string.face_skin)), BODY(tr(R.string.body_skin)), HAIR(tr(R.string.hair)), CLOTHES(tr(R.string.clothes)),
 }
 
 /** Adjustments a local mask can apply (Lightroom's local adjustment set, trimmed). */
 enum class MaskAdj(val key: String, val label: String, val min: Float, val max: Float) {
-    EXPOSURE("exposure", "Exposure", -3f, 3f), CONTRAST("contrast", "Contrast", -1f, 1f),
-    HIGHLIGHTS("highlights", "Highlights", -1f, 1f), SHADOWS("shadows", "Shadows", -1f, 1f),
-    TEMPERATURE("temperature", "Temperature", -1f, 1f), TINT("tint", "Tint", -1f, 1f),
-    SATURATION("saturation", "Saturation", -1f, 1f), CLARITY("clarity", "Clarity", -1f, 1f),
-    TEXTURE("texture", "Texture", -1f, 1f), DEHAZE("dehaze", "Dehaze", -1f, 1f);
+    EXPOSURE("exposure", tr(R.string.exposure), -3f, 3f), CONTRAST("contrast", tr(R.string.contrast), -1f, 1f),
+    HIGHLIGHTS("highlights", tr(R.string.highlights), -1f, 1f), SHADOWS("shadows", tr(R.string.shadows), -1f, 1f),
+    TEMPERATURE("temperature", tr(R.string.temperature), -1f, 1f), TINT("tint", tr(R.string.tint), -1f, 1f),
+    SATURATION("saturation", tr(R.string.saturation), -1f, 1f), CLARITY("clarity", tr(R.string.clarity), -1f, 1f),
+    TEXTURE("texture", tr(R.string.texture), -1f, 1f), DEHAZE("dehaze", tr(R.string.dehaze), -1f, 1f);
 
     fun format(v: Float) = if (this == EXPOSURE) "%+.2f EV".format(v)
     else (v * 100).toInt().let { if (it > 0) "+$it" else "$it" }

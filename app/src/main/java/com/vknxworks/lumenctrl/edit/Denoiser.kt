@@ -1,5 +1,7 @@
 package com.vknxworks.lumenctrl.edit
 
+import com.vknxworks.lumenctrl.R
+import com.vknxworks.lumenctrl.tr
 import android.content.Context
 import android.graphics.Bitmap
 import org.tensorflow.lite.DataType
@@ -21,8 +23,8 @@ import kotlin.math.roundToInt
  */
 object Denoiser {
     enum class Model(val asset: String, val label: String) {
-        QUALITY("models/nafnet_rgb_large.tflite", "Quality"),
-        FAST("models/unet_rgb_fast.tflite", "Fast"),
+        QUALITY("models/nafnet_rgb_large.tflite", tr(R.string.quality)),
+        FAST("models/unet_rgb_fast.tflite", tr(R.string.fast)),
     }
 
     class Cancelled : Exception("Cancelled")

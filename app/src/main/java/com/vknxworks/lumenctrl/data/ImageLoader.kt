@@ -1,5 +1,7 @@
 package com.vknxworks.lumenctrl.data
 
+import com.vknxworks.lumenctrl.R
+import com.vknxworks.lumenctrl.tr
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Matrix
@@ -49,7 +51,7 @@ object ImageLoader {
     fun decode(file: File, maxDim: Int): Bitmap {
         val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
         BitmapFactory.decodeFile(file.path, bounds)
-        require(bounds.outWidth > 0 && bounds.outHeight > 0) { "Unsupported image format" }
+        require(bounds.outWidth > 0 && bounds.outHeight > 0) { tr(R.string.unsupported_image_format) }
 
         var sample = 1
         while (max(bounds.outWidth, bounds.outHeight) / (sample * 2) >= maxDim) sample *= 2
@@ -57,7 +59,7 @@ object ImageLoader {
             inSampleSize = sample
             inPreferredConfig = Bitmap.Config.ARGB_8888
         }
-        var bmp = BitmapFactory.decodeFile(file.path, opts) ?: error("Could not decode image")
+        var bmp = BitmapFactory.decodeFile(file.path, opts) ?: error(tr(R.string.could_not_decode_image))
 
         val long = max(bmp.width, bmp.height)
         if (long > maxDim) {
@@ -97,7 +99,7 @@ object ImageLoader {
     /** A photo, or a video's frame, ready for rendering. */
     fun decodeAny(photo: Catalog.Photo, maxDim: Int, videoTimeMs: Long = 1000): Bitmap =
         if (photo.isVideo) videoFrame(photo.original, videoTimeMs, maxDim, photo.meta.width, photo.meta.height)
-            ?: error("Can't read a frame from this video")
+            ?: error(tr(R.string.cant_read_a_frame_from_this))
         else decode(photo.original, maxDim)
 
     /**
