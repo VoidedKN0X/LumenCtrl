@@ -4,6 +4,14 @@ What changed in each LumenCtrl release. Every release on the [Releases page](htt
 
 To publish a new version: bump `versionCode` and `versionName` in `app/build.gradle.kts`, add a section here, and push to `main`. Pushes without a version bump only build; they don't make a release.
 
+## Unreleased
+
+Not in a release yet: this is on `main` and ships with the next version. Built and checked by CI only.
+
+### Security
+
+- **Every download the build uses is now checked against a recorded checksum.** LumenCtrl was the only Ctrl app without Gradle dependency verification. `gradle/verification-metadata.xml` now lists the SHA-256 of every library and build plugin (351 components), generated on CI by the `verification-metadata.yml` workflow and committed unchanged, so a build fails if any download differs from what was recorded. Nothing in the app itself changes.
+
 ## v0.1.2 (2026-11-20)
 
 Built and checked by CI only: nothing in this release had been run on a phone when it was published.
