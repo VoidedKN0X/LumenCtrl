@@ -319,7 +319,8 @@ class LumenViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             allPhotos = catalog.photos()
             albums = catalog.albums()
-            selection = selection.filter { id -> allPhotos.any { it.id == id } }.toSet()
+            val present = allPhotos.mapTo(HashSet()) { it.id }
+            selection = selection.filter { it in present }.toSet()
         }
     }
 

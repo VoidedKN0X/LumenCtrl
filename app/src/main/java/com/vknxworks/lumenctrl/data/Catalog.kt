@@ -99,14 +99,30 @@ class Catalog(private val context: Context) {
     }
 
     private fun metaFile(id: String) = File(dir, "$id.meta.json")
+
+    /**
+     * The facts of each photo as last read from or written to its `.meta.json`, so listing the library after a change
+     * doesn't open and parse one file per photo again. Every write of a meta file goes through [writeMeta], which
+     * replaces the entry, and [delete] removes it; nothing else touches those files. Starts empty with the app.
+     */
+    private val metaCache = HashMap<String, PhotoMeta>()
+
+    /** Held while a meta file is read into, written with or removed from [metaCache], so an older read can never replace a newer write. */
+    private val metaLock = Any()
     private fun versionsFile(id: String) = File(dir, "$id.versions.json")
 
     /** Call off the main thread: reads the disk. */
     fun photo(id: String): Photo {
         val img = File(dir, "$id.vid").takeIf { it.exists() } ?: File(dir, "$id.img")
         val sidecar = File(dir, "$id.json")
-        val meta = metaFile(id).takeIf { it.exists() }
-            ?.let { runCatching { PhotoMeta.fromJson(JSONObject(it.readText())) }.getOrNull() }
+        // Only a meta file that was read (or written) in full is remembered; a missing or damaged one is looked at again each time.
+        val known = synchronized(metaLock) {
+            metaCache[id]
+                ?: metaFile(id).takeIf { it.exists() }
+                    ?.let { runCatching { PhotoMeta.fromJson(JSONObject(it.readText())) }.getOrNull() }
+                    ?.also { metaCache[id] = it }
+        }
+        val meta = known
             ?: PhotoMeta(name = "Photo", importedAt = img.lastModified(), bytes = img.length())
         return Photo(id, img, sidecar, File(dir, "${id}_thumb.jpg"), sidecar.exists(), meta)
     }
@@ -220,7 +236,16 @@ class Catalog(private val context: Context) {
         } finally { r.release() }
     }.onFailure { android.util.Log.w("LumenImport", "video metadata failed", it) }.getOrNull()
 
-    private fun writeMeta(id: String, meta: PhotoMeta) = atomicWrite(metaFile(id), meta.toJson().toString())
+    private fun writeMeta(id: String, meta: PhotoMeta) {
+        val file = metaFile(id)
+        synchronized(metaLock) {
+            // Forgotten first, so a write that fails part-way can never leave an entry that differs from the file.
+            metaCache.remove(id)
+            atomicWrite(file, meta.toJson().toString())
+            // Remembered only when the new file really took the old one's place (its temporary file is gone).
+            if (file.exists() && !File(file.path + ".tmp").exists()) metaCache[id] = meta
+        }
+    }
 
     suspend fun updateMeta(ids: Collection<String>, transform: (PhotoMeta) -> PhotoMeta) = withContext(Dispatchers.IO) {
         ids.forEach { id -> writeMeta(id, transform(photo(id).meta)) }
@@ -286,6 +311,7 @@ class Catalog(private val context: Context) {
         ).forEach { it.delete() }
         aiFiles(photo.id).forEach { it.delete() }
         thumbDir.listFiles { f -> f.name.startsWith("${photo.id}_") }?.forEach { it.delete() }
+        synchronized(metaLock) { metaCache.remove(photo.id) }
     }
 
     // ---- AI mask images (<id>.ai-<maskId>.png, source-aligned grayscale) ----
