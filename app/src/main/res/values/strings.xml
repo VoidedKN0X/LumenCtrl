@@ -512,4 +512,37 @@
     <string name="undo_last_removal">Undo last removal</string>
     <string name="up_to_x_removals_per_photo">Up to %1$d removals per photo</string>
     <string name="couldnt_remove_it_x">Couldn\'t remove it: %1$s</string>
+    <!-- Video music -->
+    <string name="music">Music</string>
+    <string name="add_music">Add music</string>
+    <string name="change_music">Change music</string>
+    <string name="remove_music">Remove music</string>
+    <string name="music_volume">Music volume</string>
+    <string name="adding_music">Adding music…</string>
+    <string name="music_hint">Pick a song or sound from your phone. It starts with the clip and fades out at its end.</string>
+    <string name="music_only">In the export you hear only the music</string>
+    <string name="music_mixed_with_sound">In the export the music is mixed with the video\'s own sound</string>
+    <string name="no_audio_in_this_file">there\'s no audio in this file</string>
+    <string name="couldnt_save_the_music">couldn\'t save the music</string>
+    <string name="couldnt_add_the_music_x">Couldn\'t add the music: %1$s</string>
+    <!-- Library export and import -->
+    <string name="library_backup">Library backup</string>
+    <string name="export_library">Export library</string>
+    <string name="export_library_subtitle">Every photo and video with its edits, versions, ratings, albums, AI masks, music, your presets and LUTs, in one ZIP file. Not encrypted: keep it somewhere safe.</string>
+    <string name="import_library">Import library</string>
+    <string name="import_library_subtitle">Adds what\'s in a LumenCtrl library file. Nothing in your library is replaced or deleted.</string>
+    <string name="import_">Import</string>
+    <string name="import_library_q">Import this library?</string>
+    <string name="import_library_summary">%1$d new photos and videos (%2$d you already have are skipped), %3$d albums, %4$d presets and %5$d LUTs, %6$s MB. Only what\'s missing is added; nothing in your library is replaced or deleted.</string>
+    <string name="exporting_library">Exporting library…</string>
+    <string name="exporting_library_x_of_x">Exporting library · %1$d of %2$d</string>
+    <string name="library_exported">Library exported</string>
+    <string name="library_export_failed_x">Library export failed: %1$s</string>
+    <string name="reading_library_file">Reading the library file…</string>
+    <string name="not_a_lumenctrl_library_file">That isn\'t a LumenCtrl library file</string>
+    <string name="couldnt_read_the_file_x">Couldn\'t read the file: %1$s</string>
+    <string name="importing_library">Importing library…</string>
+    <string name="importing_library_x_files">Importing library · %1$d files</string>
+    <string name="library_imported_x_x_x_x">Imported %1$d photos and videos, %2$d albums, %3$d presets and %4$d LUTs</string>
+    <string name="library_import_failed_x">Library import failed, nothing was added: %1$s</string>
 </resources>

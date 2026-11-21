@@ -318,6 +318,7 @@ class Catalog(private val context: Context) {
         ).forEach { it.delete() }
         aiFiles(photo.id).forEach { it.delete() }
         removalFiles(photo.id).forEach { it.delete() }
+        musicFiles(photo.id).forEach { it.delete() }
         thumbDir.listFiles { f -> f.name.startsWith("${photo.id}_") }?.forEach { it.delete() }
         synchronized(metaLock) { metaCache.remove(photo.id) }
     }
@@ -358,6 +359,15 @@ class Catalog(private val context: Context) {
             val id = f.name.removePrefix("${photo.id}.rm-").removeSuffix(".png")
             if (id !in keep) f.delete()
         }
+    }
+
+    // ---- Video music (<id>.music-<musicId>, see model/VideoEdit) ----
+
+    private fun musicFiles(photoId: String) = dir.listFiles { f -> f.name.startsWith("$photoId.music-") && !f.name.endsWith(".part") }.orEmpty().toList()
+
+    /** Deletes music copies no longer used by the edit or any saved version. */
+    suspend fun pruneMusic(photo: Photo, keep: Set<String>) = withContext(Dispatchers.IO) {
+        musicFiles(photo.id).forEach { f -> if (f.name.removePrefix("${photo.id}.music-") !in keep) f.delete() }
     }
 
     suspend fun storageBytes(): Long = withContext(Dispatchers.IO) { dir.listFiles().orEmpty().sumOf { it.length() } }

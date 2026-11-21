@@ -3,6 +3,9 @@ package com.vknxworks.lumenctrl.ui
 import com.vknxworks.lumenctrl.R
 import com.vknxworks.lumenctrl.tr
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import com.vknxworks.lumenctrl.ui.ctrl.CtrlButton
 import androidx.biometric.BiometricManager
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -89,6 +92,33 @@ fun SettingsScreen(vm: LumenViewModel) {
             CtrlRow(tr(R.string.library), "${vm.allPhotos.size} photos · ${"%.1f".format(storage / 1e6)} MB in private app storage")
             Divider()
             CtrlRow(tr(R.string.exports), tr(R.string.pictures_lumen_location_removed_by_default))
+        }
+
+        val exportLib = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/zip")) { uri ->
+            if (uri != null) vm.exportLibrary(uri)
+        }
+        val importLib = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+            if (uri != null) vm.inspectLibrary(uri)
+        }
+        Section(tr(R.string.library_backup)) {
+            CtrlRow(tr(R.string.export_library), tr(R.string.export_library_subtitle)) {
+                CtrlButton(tr(R.string.export), onClick = {
+                    exportLib.launch("LumenCtrl-library-" + java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).format(java.util.Date()) + ".zip")
+                })
+            }
+            Divider()
+            CtrlRow(tr(R.string.import_library), tr(R.string.import_library_subtitle)) {
+                CtrlButton(tr(R.string.import_), onClick = { importLib.launch(arrayOf("application/zip", "application/octet-stream")) })
+            }
+        }
+        vm.pendingImport?.let { (_, sum) ->
+            ConfirmDialog(
+                tr(R.string.import_library_q),
+                tr(R.string.import_library_summary, sum.photos - sum.alreadyHere, sum.alreadyHere, sum.albums, sum.presets, sum.luts, "%.1f".format(sum.bytes / 1e6)),
+                tr(R.string.import_),
+                onConfirm = vm::importLibrary,
+                onDismiss = vm::cancelImport,
+            )
         }
 
         Section(tr(R.string.about)) {

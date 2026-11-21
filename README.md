@@ -38,7 +38,7 @@ Part of the [Ctrl series](#the-ctrl-series) by VKNXWorks.
   - See it on HDR screens, and visualise which parts go brighter than SDR white
   - Export Ultra HDR JPEGs that also look right on SDR screens
   - Merge 2 to 7 bracketed shots into one HDR photo
-- **Video:** the same looks on videos, plus trim, mute and speed (0.5×, 1× or 2×); make a reel from several clips
+- **Video:** the same looks on videos, plus trim, mute and speed (0.5×, 1× or 2×); crop with a draggable frame, rotate and flip; add **music** from your phone (mixed with the clip's own sound or on its own, with a volume slider and a fade-out); make a reel from several clips
 - **Library:** search, filters, sort, star ratings, pick and reject flags, albums, slideshow and collage
 - **Import** from the Photo Picker, the camera, share and "Open with" from any app, or **straight from a camera over USB** (PTP/MTP), with photos you already have left unselected
 - **Edit in LumenCtrl** from any gallery app: its "Edit" button offers LumenCtrl for photos and videos. LumenCtrl copies the item into its library and opens it in the editor; the gallery's own file is never changed, and your edit is saved through Export as usual
@@ -47,6 +47,7 @@ Part of the [Ctrl series](#the-ctrl-series) by VKNXWorks.
   - Metadata policy: keep it without location (the default), keep all, or strip all
   - Optional watermark, and an optional edit record in the file
   - Save to the gallery or share; one photo or a batch
+- **Library export and import:** your whole library (originals, edits, versions, ratings, flags, albums, AI masks, denoised copies, removals, music, your presets and LUTs) in one ZIP file, to move to a new phone or keep as a backup; importing adds only what's missing and never replaces or deletes anything
 - **App lock** with fingerprint, face or your screen lock, and **Hide in screenshots** / **Hide in recent apps** (all off until you turn them on)
 - **Ctrl / Signal look**, shared by every Ctrl app: dark and light, high contrast, four accent colors, Space Grotesk and JetBrains Mono
 
@@ -84,7 +85,8 @@ If the Obtainium button doesn't open the app, add `https://github.com/VoidedKN0X
 - **AI Denoise:** in **Edit > Detail**, tap **Quality** (best) or **Fast**, keep the editor open until it's done, then set **Amount**.
 - **HDR:** in **Edit > Light**, turn on **HDR**. Export it with **Ultra HDR** on to keep the extra brightness.
 - **Export:** tap the download button at the top right. In the library, long-press to select several photos and export, rate, flag, add to an album or paste an edit onto all of them; **Create** makes a collage, an HDR merge or a reel.
-- **Settings** (gear in the library): privacy, accent color, storage and About.
+- **Settings** (gear in the library): privacy, accent color, storage, library backup and About.
+- **Library backup:** **Settings > Library backup > Export** writes everything to one ZIP file wherever you choose (a folder, a USB stick, a file manager). On another phone, **Import** reads it, shows what it will add, and adds only what isn't there yet.
 
 ## Is it safe to install?
 
@@ -135,6 +137,7 @@ Turn it on under **Settings > Privacy > App lock**. It's off until you turn it o
 - **Exports remove your location by default.** You can keep all metadata, keep it without location, or strip it all. The optional edit record holds only the edit settings.
 - Sharing hands the receiving app read access to that one export only. Save to gallery puts a copy in Pictures/Lumen (videos in Movies/Lumen), where other apps with media access can see it.
 - Android backups don't include LumenCtrl's library, and LumenCtrl is left out of Android's cloud backup and its phone-to-phone transfer.
+- **Library export** writes a plain (not encrypted) ZIP file only where you choose, with your photos and their original metadata (including location) as you imported them. Keep it somewhere private.
 
 ## How it works
 
@@ -147,7 +150,7 @@ LumenCtrl follows the design of desktop raw editors, written from scratch for An
 - **AI masks** (`edit/Segmenter.kt`): two bundled segmentation models find people, animals, vehicles and body parts. The winning class at each pixel becomes the mask, a guided filter snaps it to the photo's edges, and it's stored beside the photo. Sky uses LumenCtrl's own rules: smooth, bright or blue, connected to the top edge, and not warm-tinted.
 - **AI Denoise** (`edit/Denoiser.kt`): the photo (up to 4096 px) is processed in 256 px tiles with 16 px overlaps. Each tile's average color is pinned to the original's, and the coarse tones are taken from the original, so the result has no tile seams or color casts. It's saved once as a denoised copy and blended live with Amount. On the test phone, a 4.3 MP photo takes about 20 s with Fast and 30 s with Quality.
 - **HDR** (`render/Hdr.kt`, `edit/HdrMerge.kt`): the shader also renders a gain map, the extra brightness each pixel should get on an HDR screen. Exports pair it with the SDR image as an Ultra HDR JPEG. Photos that already have a gain map keep their HDR. Merge to HDR aligns the brackets, merges them weighted by exposure, tone-maps the result and stores a +3 stop gain map.
-- **Video** (`render/VideoGl.kt`, `render/VideoExporter.kt`): Android's built-in decoder feeds frames to the same shader; the encoder writes H.264 MP4 at 30 fps up to 4K. The original audio is copied without re-encoding when the speed isn't changed.
+- **Video** (`render/VideoGl.kt`, `render/VideoExporter.kt`): Android's built-in decoder feeds frames to the same shader; the encoder writes H.264 MP4 at 30 fps up to 4K. The original audio is copied without re-encoding when the speed isn't changed. With music (`render/AudioMix.kt`), the music and the clip's own sound are decoded, mixed at 48 kHz stereo and encoded once to AAC, all with Android's own codecs.
 - **USB import** (`data/CameraImport.kt`): Android's built-in PTP/MTP support, no extra libraries. DNG decodes fully; other raw formats depend on what the phone's decoder can read, usually the embedded preview.
 
 ### Bundled AI models

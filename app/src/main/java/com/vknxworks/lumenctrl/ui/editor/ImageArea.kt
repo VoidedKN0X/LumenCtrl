@@ -616,6 +616,57 @@ fun ImageArea(vm: LumenViewModel, st: EditorState, modifier: Modifier) {
     }
 }
 
+/**
+ * The crop frame with draggable edges and corners, for the video editor (the photo editor has the same inside
+ * [ImageArea]). It sits over a view that shows the whole uncropped frame of a [texW]×[texH] picture.
+ */
+@Composable
+fun CropOverlay(vm: LumenViewModel, texW: Int, texH: Int, modifier: Modifier) {
+    val c = Ctrl.colors
+    var size by remember { mutableStateOf(IntSize.Zero) }
+    val params = vm.params
+    val map = if (size != IntSize.Zero && texW > 0 && texH > 0) mapping(size, params, texW, texH, DrawOptions(ignoreCrop = true)) else null
+    val currentMap by rememberUpdatedState(map)
+    val currentParams by rememberUpdatedState(params)
+    var cropHandle by remember { mutableStateOf<CropHandle?>(null) }
+    Canvas(
+        modifier.onSizeChanged { size = it }.pointerInput(texW, texH) {
+            detectDragGestures(
+                onDragStart = { pos ->
+                    val m = currentMap ?: return@detectDragGestures
+                    val cr = currentParams.crop
+                    val tl = m.outputToScreen(cr.l, cr.t); val br = m.outputToScreen(cr.r, cr.b)
+                    val tol = 36.dp.toPx()
+                    val nearL = abs(pos.x - tl.x) < tol; val nearR = abs(pos.x - br.x) < tol
+                    val nearT = abs(pos.y - tl.y) < tol; val nearB = abs(pos.y - br.y) < tol
+                    val inX = pos.x in tl.x..br.x; val inY = pos.y in tl.y..br.y
+                    cropHandle = when {
+                        nearL && nearT -> CropHandle.TL; nearR && nearT -> CropHandle.TR
+                        nearL && nearB -> CropHandle.BL; nearR && nearB -> CropHandle.BR
+                        nearL && inY -> CropHandle.L; nearR && inY -> CropHandle.R
+                        nearT && inX -> CropHandle.T; nearB && inX -> CropHandle.B
+                        inX && inY -> CropHandle.MOVE
+                        else -> null
+                    }
+                },
+                onDrag = { change, drag ->
+                    val m = currentMap ?: return@detectDragGestures
+                    val handle = cropHandle ?: return@detectDragGestures
+                    change.consume()
+                    val p = currentParams
+                    val fr = lockRatio(AspectLock.of(p.cropAspect), Geometry.frameAspect(p, texW, texH))
+                    vm.setLiveParams(p.copy(crop = dragCrop(p.crop, handle, drag.x / m.w, drag.y / m.h, fr)), tr(R.string.crop))
+                },
+                onDragEnd = { cropHandle = null; vm.commit() },
+                onDragCancel = { cropHandle = null; vm.commit() },
+            )
+        },
+    ) {
+        val m = map ?: return@Canvas
+        drawCrop(m, params.crop, c.accent)
+    }
+}
+
 /** The topmost text layer under [pos], or null. */
 private fun textLayerAt(p: EditParams, m: Mapping, pos: Offset): String? =
     p.layers.lastOrNull { it.kind == Overlay.Kind.TEXT && OverlayPainter.textBounds(it, m.left, m.top, m.w, m.h).contains(pos.x, pos.y) }?.id

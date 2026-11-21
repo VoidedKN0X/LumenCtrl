@@ -368,6 +368,62 @@ class LumenViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    // ---- Library export and import ----
+    private val archive = com.vknxworks.lumenctrl.data.LibraryArchive(app)
+
+    /** A library file that was read and waits for "Import" to be confirmed. */
+    var pendingImport by mutableStateOf<Pair<Uri, com.vknxworks.lumenctrl.data.LibraryArchive.Summary>?>(null); private set
+
+    fun exportLibrary(uri: Uri) {
+        viewModelScope.launch {
+            busy = tr(R.string.exporting_library)
+            runCatching {
+                withContext(Dispatchers.IO) {
+                    archive.export(uri) { done, total -> viewModelScope.launch { busy = tr(R.string.exporting_library_x_of_x, done, total) } }
+                }
+            }.onSuccess { message = tr(R.string.library_exported) }
+                .onFailure { message = tr(R.string.library_export_failed_x, it.message) }
+            busy = null
+        }
+    }
+
+    /** Reads a library file and asks for confirmation (see [pendingImport]); nothing is changed yet. */
+    fun inspectLibrary(uri: Uri) {
+        viewModelScope.launch {
+            busy = tr(R.string.reading_library_file)
+            runCatching { withContext(Dispatchers.IO) { archive.inspect(uri) } }
+                .onSuccess { pendingImport = uri to it }
+                .onFailure {
+                    message = if (it is com.vknxworks.lumenctrl.data.LibraryArchive.NotALibrary) tr(R.string.not_a_lumenctrl_library_file)
+                    else tr(R.string.couldnt_read_the_file_x, it.message)
+                }
+            busy = null
+        }
+    }
+
+    fun cancelImport() { pendingImport = null }
+
+    fun importLibrary() {
+        val (uri, _) = pendingImport ?: return
+        pendingImport = null
+        viewModelScope.launch {
+            busy = tr(R.string.importing_library)
+            runCatching {
+                withContext(Dispatchers.IO) {
+                    archive.import(uri) { n -> viewModelScope.launch { busy = tr(R.string.importing_library_x_files, n) } }
+                }
+            }.onSuccess { r ->
+                message = tr(R.string.library_imported_x_x_x_x, r.photos, r.albums, r.presets, r.luts)
+            }.onFailure {
+                message = if (it is com.vknxworks.lumenctrl.data.LibraryArchive.NotALibrary) tr(R.string.not_a_lumenctrl_library_file)
+                else tr(R.string.library_import_failed_x, it.message)
+            }
+            busy = null
+            refresh()
+            loadLooks()
+        }
+    }
+
     // ---- Slideshow / collage ----
     var showIds by mutableStateOf<List<String>>(emptyList()); private set
 
@@ -770,6 +826,7 @@ class LumenViewModel(app: Application) : AndroidViewModel(app) {
         val finalParams = params
         val keepAi = (listOf(finalParams) + versions.map { it.params }).flatMap { p -> p.masks.map { it.id } }.toSet()
         val keepRemovals = (listOf(finalParams) + versions.map { it.params }).flatMap { p -> p.removals.map { it.id } }.toSet()
+        val keepMusic = (listOf(finalParams) + versions.map { it.params }).mapNotNull { it.video.musicId }.toSet()
         openPhoto = null
         preview = null
         basePreview = null
@@ -786,6 +843,7 @@ class LumenViewModel(app: Application) : AndroidViewModel(app) {
             catalog.saveParams(photo, finalParams)
             catalog.pruneAiMasks(photo, keepAi)
             catalog.pruneRemovals(photo, keepRemovals)
+            catalog.pruneMusic(photo, keepMusic)
             renderThumb(photo, finalParams)
             thumbVersion++
             refresh()
@@ -824,6 +882,59 @@ class LumenViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     var videoProgress by mutableStateOf<Float?>(null); private set
+
+    /** Copies an audio file into the library as the open video's music. */
+    fun setMusic(uri: Uri) {
+        val photo = openPhoto ?: return
+        if (!photo.isVideo) return
+        val app = getApplication<Application>()
+        viewModelScope.launch {
+            busy = tr(R.string.adding_music)
+            runCatching {
+                withContext(Dispatchers.IO) {
+                    val name = runCatching {
+                        app.contentResolver.query(uri, arrayOf(android.provider.OpenableColumns.DISPLAY_NAME), null, null, null)?.use {
+                            if (it.moveToFirst()) it.getString(0) else null
+                        }
+                    }.getOrNull()?.take(80)
+                    val id = UUID.randomUUID().toString().replace("-", "").take(8)
+                    val f = com.vknxworks.lumenctrl.model.VideoEdit.musicFile(photo.original, id)
+                    val tmp = File(f.path + ".part")
+                    try {
+                        app.contentResolver.openInputStream(uri)!!.use { input ->
+                            tmp.outputStream().use { out ->
+                                val buf = ByteArray(64 * 1024)
+                                var total = 0L
+                                while (true) {
+                                    val n = input.read(buf)
+                                    if (n < 0) break
+                                    total += n
+                                    if (total > MAX_MUSIC_BYTES) error(tr(R.string.the_file_is_too_large))
+                                    out.write(buf, 0, n)
+                                }
+                            }
+                        }
+                        // It must be something Android can play.
+                        val ex = android.media.MediaExtractor()
+                        val ok = try {
+                            ex.setDataSource(tmp.path)
+                            (0 until ex.trackCount).any { ex.getTrackFormat(it).getString(android.media.MediaFormat.KEY_MIME)?.startsWith("audio/") == true }
+                        } finally { ex.release() }
+                        if (!ok) error(tr(R.string.no_audio_in_this_file))
+                        if (!tmp.renameTo(f)) error(tr(R.string.couldnt_save_the_music))
+                    } finally { tmp.delete() }
+                    id to (name ?: tr(R.string.music))
+                }
+            }.onSuccess { (id, name) ->
+                if (openPhoto?.id == photo.id) {
+                    edit(tr(R.string.add_music)) { it.copy(video = it.video.copy(musicId = id, musicName = name)) }
+                }
+            }.onFailure { message = tr(R.string.couldnt_add_the_music_x, it.message) }
+            busy = null
+        }
+    }
+
+    fun removeMusic() = edit(tr(R.string.remove_music)) { it.copy(video = it.video.copy(musicId = null, musicName = null)) }
 
     private fun clipFor(p: Catalog.Photo, params: EditParams) =
         VideoExporter.Clip(p.original, params, p.meta.width, p.meta.height, p.meta.durationMs)
@@ -1026,5 +1137,7 @@ class LumenViewModel(app: Application) : AndroidViewModel(app) {
     private companion object {
         /** A 96³ .cube file is about 25 MB of text; anything bigger isn't a LUT LumenCtrl can use. */
         const val MAX_LUT_BYTES = 32L * 1024 * 1024
+        /** Music copied into the library: generous for long songs in lossless formats. */
+        const val MAX_MUSIC_BYTES = 300L * 1024 * 1024
     }
 }

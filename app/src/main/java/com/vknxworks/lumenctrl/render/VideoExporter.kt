@@ -54,7 +54,17 @@ object VideoExporter {
         if (aspect >= 1f) { ow = long.roundToInt(); oh = (long / aspect).roundToInt() } else { oh = long.roundToInt(); ow = (long * aspect).roundToInt() }
         ow = (ow / 16).coerceAtLeast(1) * 16; oh = (oh / 16).coerceAtLeast(1) * 16
 
-        val audio = audioPlan(clips)
+        // With music, the sound is mixed and encoded first (it's short); otherwise the original audio is copied as is.
+        val parts = clips.map { c ->
+            val v = c.params.video
+            val s = v.trimStartMs * 1000
+            val e = v.end(c.durationMs) * 1000
+            AudioMix.Part(c.file, v, s, e, ((e - s) / v.speed).toLong())
+        }
+        val mixed = if (AudioMix.hasMusic(parts)) {
+            runCatching { AudioMix.render(parts, 33_333) }.onFailure { android.util.Log.w("LumenVideo", "music mix failed", it) }.getOrNull()
+        } else null
+        val audio = mixed?.format ?: audioPlan(clips)
         val totalUs = clips.sumOf { c -> ((c.params.video.end(c.durationMs) - c.params.video.trimStartMs) * 1000 / c.params.video.speed).toLong() }.coerceAtLeast(1)
 
         val format = MediaFormat.createVideoFormat(MediaFormat.MIMETYPE_VIDEO_AVC, ow, oh).apply {
@@ -158,8 +168,10 @@ object VideoExporter {
             encoder.signalEndOfInputStream()
             drainEncoder(encoder, muxer, muxState, audio, true)
 
-            // Audio pass: copy the original compressed samples, trimmed, after video.
-            if (audio != null && muxState.started) {
+            // Audio pass: the mixed music track, or the original compressed samples, trimmed, after video.
+            if (mixed != null && muxState.started) {
+                for ((bytes, sampleInfo) in mixed.samples) muxer.writeSampleData(muxState.audioTrack, ByteBuffer.wrap(bytes), sampleInfo)
+            } else if (audio != null && muxState.started) {
                 var aOffset = 0L
                 val buf = ByteBuffer.allocate(1 shl 20)
                 for (clip in clips) {

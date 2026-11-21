@@ -156,26 +156,40 @@ data class Spot(
     }
 }
 
-/** Video-only edit state: trim (ms), mute and playback speed. */
+/** Video-only edit state: trim (ms), mute, playback speed and music. */
 data class VideoEdit(
     val trimStartMs: Long = 0,
     /** -1 = until the end. */
     val trimEndMs: Long = -1,
     val mute: Boolean = false,
     val speed: Float = 1f,
+    /** Music: the copy of the audio file is stored beside the video as `<id>.music-<musicId>`; null = no music. */
+    val musicId: String? = null,
+    /** The music file's name as the user picked it (shown only). */
+    val musicName: String? = null,
+    val musicVolume: Float = 0.8f,
 ) {
-    fun isDefault() = trimStartMs == 0L && trimEndMs < 0 && !mute && speed == 1f
+    fun isDefault() = trimStartMs == 0L && trimEndMs < 0 && !mute && speed == 1f && musicId == null
     fun end(durationMs: Long) = if (trimEndMs < 0) durationMs else trimEndMs.coerceAtMost(durationMs)
 
     fun toJson(): JSONObject = JSONObject().put("trimStartMs", trimStartMs).put("trimEndMs", trimEndMs)
         .put("mute", mute).put("speed", speed.toDouble())
+        .put("musicId", musicId ?: JSONObject.NULL).put("musicName", musicName ?: JSONObject.NULL)
+        .put("musicVolume", musicVolume.toDouble())
 
     companion object {
         val SPEEDS = listOf(0.5f, 1f, 2f)
+        private val MUSIC_ID = Regex("^[a-f0-9]{8}$")
         fun fromJson(o: JSONObject?): VideoEdit = if (o == null) VideoEdit() else VideoEdit(
             o.optLong("trimStartMs", 0).coerceAtLeast(0), o.optLong("trimEndMs", -1),
             o.optBoolean("mute", false), o.optDouble("speed", 1.0).toFloat().takeIf { it in 0.25f..4f } ?: 1f,
+            musicId = if (o.isNull("musicId")) null else o.optString("musicId").takeIf { MUSIC_ID.matches(it) },
+            musicName = if (o.isNull("musicName")) null else o.optString("musicName").take(80).ifBlank { null },
+            musicVolume = o.optDouble("musicVolume", 0.8).toFloat().coerceIn(0f, 1f),
         )
+
+        /** Where a video's music copy is stored. */
+        fun musicFile(video: java.io.File, musicId: String) = java.io.File(video.parentFile, "${video.nameWithoutExtension}.music-$musicId")
     }
 }
 

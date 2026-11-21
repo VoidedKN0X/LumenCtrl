@@ -26,6 +26,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.systemGestureExclusion
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
@@ -35,6 +37,7 @@ import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.Crop
 import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.outlined.Movie
+import androidx.compose.material.icons.outlined.MusicNote
 import androidx.compose.material.icons.outlined.Pause
 import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.outlined.Share
@@ -113,27 +116,49 @@ fun VideoEditorScreen(vm: LumenViewModel) {
     val duration = photo.meta.durationMs.coerceAtLeast(1)
     val v = vm.params.video
     val trimEnd = v.end(duration)
-    BackHandler { player?.pause(); vm.close() }
+    // The music plays along in the preview, from the clip's start (trim) at normal speed, like in the export.
+    val musicFile = v.musicId?.let { VideoEdit.musicFile(photo.original, it) }
+    val musicPlayer = remember(musicFile?.path) {
+        musicFile?.takeIf { it.exists() }?.let { f ->
+            runCatching { MediaPlayer().apply { setDataSource(f.path); prepare() } }.getOrNull()
+        }
+    }
+    DisposableEffect(musicPlayer) { onDispose { runCatching { musicPlayer?.release() } } }
+    BackHandler { player?.pause(); runCatching { musicPlayer?.pause() }; vm.close() }
 
     // Keep playback inside the trim range, and mute/speed in sync with the edit.
     LaunchedEffect(player, playing, v) {
         val mp = player ?: return@LaunchedEffect
+        fun musicAt(videoMs: Long) = ((videoMs - v.trimStartMs).coerceAtLeast(0) / v.speed).toLong().toInt()
         runCatching {
             mp.setVolume(if (v.mute) 0f else 1f, if (v.mute) 0f else 1f)
             if (playing) mp.playbackParams = PlaybackParams().setSpeed(v.speed) else if (mp.isPlaying) mp.pause()
         }
+        runCatching {
+            musicPlayer?.let { m ->
+                m.setVolume(v.musicVolume, v.musicVolume)
+                if (playing) {
+                    val at = musicAt(mp.currentPosition.toLong())
+                    if (at < m.duration) { m.seekTo(at); m.start() } else if (m.isPlaying) m.pause()
+                } else if (m.isPlaying) m.pause()
+            }
+        }
         while (playing) {
             position = mp.currentPosition.toLong()
-            if (position >= trimEnd || position < v.trimStartMs - 50) mp.seekTo(v.trimStartMs, MediaPlayer.SEEK_CLOSEST)
+            if (position >= trimEnd || position < v.trimStartMs - 50) {
+                mp.seekTo(v.trimStartMs, MediaPlayer.SEEK_CLOSEST)
+                runCatching { musicPlayer?.let { m -> m.seekTo(0); if (!m.isPlaying) m.start() } }
+            }
             delay(40)
         }
         position = mp.currentPosition.toLong()
+        runCatching { musicPlayer?.let { m -> if (m.isPlaying) m.pause() } }
         vm.refreshVideoFrame(position)
     }
 
     Column(Modifier.fillMaxSize().background(c.bg).systemBarsPadding()) {
         Row(Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-            CtrlIconButton(Icons.AutoMirrored.Outlined.ArrowBack, tr(R.string.back_to_library), { player?.pause(); vm.close() })
+            CtrlIconButton(Icons.AutoMirrored.Outlined.ArrowBack, tr(R.string.back_to_library), { player?.pause(); runCatching { musicPlayer?.pause() }; vm.close() })
             Spacer(Modifier.size(10.dp))
             MonoLabel(tr(R.string.video_x, fmt(trimEnd - v.trimStartMs)), Modifier.weight(1f))
             CtrlIconButton(Icons.AutoMirrored.Outlined.Undo, tr(R.string.undo), vm::undo, style = CtrlButtonStyle.Ghost, enabled = vm.canUndo, size = 40)
@@ -143,10 +168,12 @@ fun VideoEditorScreen(vm: LumenViewModel) {
         }
 
         Box(Modifier.weight(1f).fillMaxWidth().padding(top = 8.dp)) {
-            VideoCanvas(vm, st, onPlayer = { mp ->
+            VideoCanvas(vm, st, cropping = tool == 2, onPlayer = { mp ->
                 player = mp
                 mp.seekTo(vm.params.video.trimStartMs, MediaPlayer.SEEK_CLOSEST)
             }, modifier = Modifier.fillMaxSize())
+            // Crop: the whole frame with a draggable crop box on top.
+            if (tool == 2) CropOverlay(vm, photo.meta.width, photo.meta.height, Modifier.fillMaxSize())
             Surface(
                 onClick = {
                     player?.let { mp ->
@@ -191,7 +218,13 @@ fun VideoEditorScreen(vm: LumenViewModel) {
 @Composable
 private fun VideoPanel(vm: LumenViewModel, hasAudio: Boolean, duration: Long) {
     val v = vm.params.video
-    Column(Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+    val musicPicker = androidx.activity.compose.rememberLauncherForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.OpenDocument(),
+    ) { uri -> if (uri != null) vm.setMusic(uri) }
+    Column(
+        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             MonoLabel(tr(R.string.trim_x_x, fmt(v.trimStartMs), fmt(v.end(duration))), Modifier.weight(1f))
             CtrlButton(tr(R.string.reset_trim), onClick = { vm.edit(tr(R.string.reset_trim)) { it.copy(video = it.video.copy(trimStartMs = 0, trimEndMs = -1)) } }, style = CtrlButtonStyle.Ghost)
@@ -208,6 +241,24 @@ private fun VideoPanel(vm: LumenViewModel, hasAudio: Boolean, duration: Long) {
             }
         }
         if (v.speed != 1f && hasAudio) MonoLabel(tr(R.string.audio_is_left_out_at_other))
+        MonoLabel(tr(R.string.music), Modifier.padding(top = 4.dp))
+        if (v.musicId == null) {
+            CtrlButton(tr(R.string.add_music), onClick = { musicPicker.launch(arrayOf("audio/*")) }, icon = Icons.Outlined.MusicNote)
+            MonoLabel(tr(R.string.music_hint))
+        } else {
+            Text(v.musicName ?: tr(R.string.music), style = CtrlType.body, color = Ctrl.colors.text)
+            com.vknxworks.lumenctrl.ui.ctrl.LabeledSlider(
+                tr(R.string.music_volume), "${(v.musicVolume * 100).toInt()}", v.musicVolume, 0f..1f, 0f, v.musicVolume != 0.8f,
+                onChange = { x -> vm.setLiveParams(vm.params.copy(video = vm.params.video.copy(musicVolume = x)), tr(R.string.music_volume)) },
+                onDone = vm::commit,
+                onReset = { vm.edit(tr(R.string.music_volume)) { it.copy(video = it.video.copy(musicVolume = 0.8f)) } },
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                CtrlButton(tr(R.string.change_music), onClick = { musicPicker.launch(arrayOf("audio/*")) }, icon = Icons.Outlined.MusicNote)
+                CtrlButton(tr(R.string.remove_music), onClick = vm::removeMusic, style = CtrlButtonStyle.Ghost)
+            }
+            MonoLabel(if (v.mute || !hasAudio || v.speed != 1f) tr(R.string.music_only) else tr(R.string.music_mixed_with_sound))
+        }
     }
 }
 
@@ -283,7 +334,7 @@ private fun Timeline(vm: LumenViewModel, position: Long, duration: Long, onSeek:
 
 /** GLSurfaceView + MediaPlayer, graded live with the develop shader. */
 @Composable
-private fun VideoCanvas(vm: LumenViewModel, st: EditorState, onPlayer: (MediaPlayer) -> Unit, modifier: Modifier) {
+private fun VideoCanvas(vm: LumenViewModel, st: EditorState, cropping: Boolean, onPlayer: (MediaPlayer) -> Unit, modifier: Modifier) {
     val c = Ctrl.colors
     val photo = vm.openPhoto ?: return
     val renderer = remember(photo.id) { VideoRenderer(photo.meta.width.coerceAtLeast(2), photo.meta.height.coerceAtLeast(2)) }
@@ -321,7 +372,7 @@ private fun VideoCanvas(vm: LumenViewModel, st: EditorState, onPlayer: (MediaPla
         update = { v ->
             renderer.params = vm.params
             renderer.options = DrawOptions(
-                before = st.showBefore, ignoreCrop = false,
+                before = st.showBefore, ignoreCrop = cropping,
                 groundR = ground.red, groundG = ground.green, groundB = ground.blue,
             )
             v.requestRender()
