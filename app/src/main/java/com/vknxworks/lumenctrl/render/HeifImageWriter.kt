@@ -110,7 +110,8 @@ object HeifImageWriter {
         try {
             codec.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE)
             codec.start()
-            muxer = MediaMuxer(out.path, MediaMuxer.OutputFormat.MUXER_OUTPUT_HEIF)
+            val mux = MediaMuxer(out.path, MediaMuxer.OutputFormat.MUXER_OUTPUT_HEIF)
+            muxer = mux
             val pixels = IntArray(tileW * tileH)
             val info = MediaCodec.BufferInfo()
             var track = -1
@@ -152,8 +153,8 @@ object HeifImageWriter {
                             f.setInteger(MediaFormat.KEY_GRID_COLUMNS, cols)
                         }
                         f.setInteger(MediaFormat.KEY_IS_DEFAULT, 1)
-                        track = muxer.addTrack(f)
-                        muxer.start()
+                        track = mux.addTrack(f)
+                        mux.start()
                         muxerStarted = true
                     }
                     oi >= 0 -> {
@@ -164,7 +165,7 @@ object HeifImageWriter {
                             buf.position(info.offset)
                             buf.limit(info.offset + info.size)
                             val sample = MediaCodec.BufferInfo().apply { set(info.offset, info.size, 0, 0) }
-                            muxer.writeSampleData(track, buf, sample)
+                            mux.writeSampleData(track, buf, sample)
                             written++
                         }
                         codec.releaseOutputBuffer(oi, false)
@@ -173,7 +174,7 @@ object HeifImageWriter {
                 }
             }
             check(written == tiles) { "${kind.name} encoder wrote $written of $tiles tiles" }
-            muxer.stop()
+            mux.stop()
             muxerStarted = false
         } catch (t: Throwable) {
             out.delete()

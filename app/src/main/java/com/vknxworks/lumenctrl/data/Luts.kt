@@ -79,15 +79,19 @@ object Luts {
         true
     }
 
-    fun rename(id: String, name: String) = synchronized(lock) {
-        writeIndex(list().map { if (it.id == id) it.copy(name = name.trim().ifBlank { it.name }.take(60)) else it })
+    fun rename(id: String, name: String) {
+        synchronized(lock) {
+            writeIndex(list().map { if (it.id == id) it.copy(name = name.trim().ifBlank { it.name }.take(60)) else it })
+        }
     }
 
-    fun delete(id: String) = synchronized(lock) {
+    fun delete(id: String) {
         if (!isValidId(id)) return
-        writeIndex(list().filter { it.id != id })
-        dir?.let { File(it, "$id.lut").delete() }
-        cache.remove(id)
+        synchronized(lock) {
+            writeIndex(list().filter { it.id != id })
+            dir?.let { File(it, "$id.lut").delete() }
+            cache.remove(id)
+        }
     }
 
     /** The stored file of a LUT (for library export), or null. */

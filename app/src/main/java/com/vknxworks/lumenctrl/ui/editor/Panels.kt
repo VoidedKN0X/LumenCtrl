@@ -176,14 +176,22 @@ fun PresetPanel(vm: LumenViewModel) {
             tr(R.string.save_as_preset), "", tr(R.string.save),
             onConfirm = { vm.saveUserPreset(it) }, onDismiss = { dialog = null },
         )
-        "rename" -> if (mine != null) com.vknxworks.lumenctrl.ui.TextDialog(
-            tr(R.string.rename_preset), mine.name, tr(R.string.rename),
-            onConfirm = { vm.renameUserPreset(mine.id, it) }, onDismiss = { dialog = null },
-        ) else dialog = null
-        "delete" -> if (mine != null) com.vknxworks.lumenctrl.ui.ConfirmDialog(
-            tr(R.string.delete_x_q, mine.name), tr(R.string.delete_preset_text), tr(R.string.delete),
-            onConfirm = { vm.deleteUserPreset(mine.id) }, onDismiss = { dialog = null },
-        ) else dialog = null
+        "rename" -> if (mine != null) {
+            com.vknxworks.lumenctrl.ui.TextDialog(
+                tr(R.string.rename_preset), mine.name, tr(R.string.rename),
+                onConfirm = { vm.renameUserPreset(mine.id, it) }, onDismiss = { dialog = null },
+            )
+        } else {
+            dialog = null
+        }
+        "delete" -> if (mine != null) {
+            com.vknxworks.lumenctrl.ui.ConfirmDialog(
+                tr(R.string.delete_x_q, mine.name), tr(R.string.delete_preset_text), tr(R.string.delete),
+                onConfirm = { vm.deleteUserPreset(mine.id) }, onDismiss = { dialog = null },
+            )
+        } else {
+            dialog = null
+        }
     }
 }
 
@@ -216,14 +224,22 @@ private fun LutTools(vm: LumenViewModel) {
         }
     }
     when (dialog) {
-        "rename" -> if (info != null) com.vknxworks.lumenctrl.ui.TextDialog(
-            tr(R.string.rename_lut), info.name, tr(R.string.rename),
-            onConfirm = { vm.renameLut(info.id, it) }, onDismiss = { dialog = null },
-        ) else dialog = null
-        "delete" -> if (info != null) com.vknxworks.lumenctrl.ui.ConfirmDialog(
-            tr(R.string.delete_x_q, info.name), tr(R.string.delete_lut_text), tr(R.string.delete),
-            onConfirm = { vm.deleteLut(info.id) }, onDismiss = { dialog = null },
-        ) else dialog = null
+        "rename" -> if (info != null) {
+            com.vknxworks.lumenctrl.ui.TextDialog(
+                tr(R.string.rename_lut), info.name, tr(R.string.rename),
+                onConfirm = { vm.renameLut(info.id, it) }, onDismiss = { dialog = null },
+            )
+        } else {
+            dialog = null
+        }
+        "delete" -> if (info != null) {
+            com.vknxworks.lumenctrl.ui.ConfirmDialog(
+                tr(R.string.delete_x_q, info.name), tr(R.string.delete_lut_text), tr(R.string.delete),
+                onConfirm = { vm.deleteLut(info.id) }, onDismiss = { dialog = null },
+            )
+        } else {
+            dialog = null
+        }
     }
 }
 
