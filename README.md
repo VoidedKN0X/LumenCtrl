@@ -113,6 +113,7 @@ If the Obtainium button doesn't open the app, add `https://github.com/VoidedKN0X
 | Permission | What LumenCtrl uses it for |
 | --- | --- |
 | Use biometric hardware | Optional fingerprint unlock for the app lock (strong biometrics only). |
+| Hide other apps' floating windows | While a lock or PIN screen (or the "Forgot PIN?" confirmation) shows, other apps' floating windows (chat heads, overlays) are hidden over it, so nothing can cover or imitate it. No prompt; overlays work as usual everywhere else. |
 | App-internal broadcasts (`com.vknxworks.lumenctrl.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION`) | Added by AndroidX so that only LumenCtrl itself can send to its own internal receivers. It isn't something you grant and gives no access to anything. |
 
 USB camera import asks Android for access to that one camera when you connect it; Android shows the prompt.
