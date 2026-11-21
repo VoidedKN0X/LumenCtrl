@@ -199,6 +199,8 @@ data class EditParams(
     val video: VideoEdit = VideoEdit(),
     /** Id of an imported 3D LUT (see data/Luts), applied after color grading at [Param.LUT_AMOUNT]. */
     val lut: String? = null,
+    /** Text and drawing layers on top of the finished photo, in drawing order. */
+    val layers: List<Overlay> = emptyList(),
 ) {
     operator fun get(p: Param): Float = values[p.key] ?: p.default
 
@@ -207,7 +209,7 @@ data class EditParams(
 
     fun isDefault(): Boolean =
         Param.entries.all { get(it) == it.default } && quarterTurns == 0 && !flipH &&
-            crop.isFull() && curves.isIdentity() && masks.isEmpty() && spots.isEmpty() && video.isDefault() && lut == null
+            crop.isFull() && curves.isIdentity() && masks.isEmpty() && spots.isEmpty() && video.isDefault() && lut == null && layers.isEmpty()
 
     /** Lightroom-style paste: global adjustments and curves; keeps this photo's framing, masks and spots. */
     fun pasteAdjustmentsFrom(other: EditParams): EditParams = copy(
@@ -241,6 +243,7 @@ data class EditParams(
             .put("presetAmount", presetAmount.toDouble())
             .put("video", video.toJson())
             .put("lut", lut ?: JSONObject.NULL)
+            .put("layers", JSONArray().apply { layers.forEach { put(it.toJson()) } })
             .toString(2)
     }
 
@@ -272,6 +275,8 @@ data class EditParams(
                 presetAmount = o.optDouble("presetAmount", 1.0).toFloat().coerceIn(0f, 2f),
                 video = VideoEdit.fromJson(o.optJSONObject("video")),
                 lut = if (o.isNull("lut")) null else o.optString("lut").takeIf { LUT_ID.matches(it) },
+                layers = o.optJSONArray("layers")?.let { a -> (0 until a.length()).mapNotNull { Overlay.fromJson(a.getJSONObject(it)) } }
+                    .orEmpty().take(Overlay.MAX_LAYERS),
             )
         }
     }

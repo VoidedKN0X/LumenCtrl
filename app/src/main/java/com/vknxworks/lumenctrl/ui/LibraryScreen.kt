@@ -403,13 +403,16 @@ fun ConfirmDialog(title: String, text: String, confirm: String, onConfirm: () ->
 }
 
 @Composable
-fun TextDialog(title: String, initial: String, confirm: String, onConfirm: (String) -> Unit, onDismiss: () -> Unit) {
+fun TextDialog(
+    title: String, initial: String, confirm: String, onConfirm: (String) -> Unit, onDismiss: () -> Unit,
+    maxLength: Int = 40, placeholder: String = tr(R.string.name),
+) {
     val c = Ctrl.colors
     var text by remember { mutableStateOf(initial) }
     AlertDialog(
         onDismissRequest = onDismiss, containerColor = c.surface, shape = CardShape,
         title = { Text(title, style = CtrlType.title, color = c.text) },
-        text = { CtrlTextField(text, { text = it.take(40) }, tr(R.string.name), Modifier.fillMaxWidth()) },
+        text = { CtrlTextField(text, { text = it.take(maxLength) }, placeholder, Modifier.fillMaxWidth()) },
         confirmButton = { CtrlButton(confirm, onClick = { onConfirm(text); onDismiss() }, style = CtrlButtonStyle.Accent) },
         dismissButton = { CtrlButton(tr(R.string.cancel), onClick = onDismiss, style = CtrlButtonStyle.Ghost) },
     )

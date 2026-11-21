@@ -442,7 +442,10 @@ class LumenViewModel(app: Application) : AndroidViewModel(app) {
     private val undoStack = ArrayDeque<Step>()
     private val redoStack = ArrayDeque<Step>()
 
-    init { refresh(); loadLooks() }
+    init {
+        com.vknxworks.lumenctrl.render.OverlayPainter.init(app)
+        refresh(); loadLooks()
+    }
 
     fun refresh() {
         viewModelScope.launch {

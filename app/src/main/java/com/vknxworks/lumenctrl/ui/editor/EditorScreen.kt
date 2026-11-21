@@ -29,6 +29,7 @@ import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Layers
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.RestartAlt
+import androidx.compose.material.icons.outlined.TextFields
 import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material.icons.outlined.ViewTimeline
 import androidx.compose.runtime.Composable
@@ -57,7 +58,13 @@ import com.vknxworks.lumenctrl.ui.ctrl.CtrlNavPill
 import com.vknxworks.lumenctrl.ui.ctrl.MonoLabel
 import com.vknxworks.lumenctrl.ui.ctrl.NavItem
 
-enum class Tool(val label: String) { PRESETS(tr(R.string.presets)), EDIT(tr(R.string.edit)), MASKS(tr(R.string.masks)), HEAL(tr(R.string.heal)), CROP(tr(R.string.crop)) }
+enum class Tool(val label: String) {
+    PRESETS(tr(R.string.presets)), EDIT(tr(R.string.edit)), MASKS(tr(R.string.masks)), HEAL(tr(R.string.heal)),
+    LAYERS(tr(R.string.text_and_draw)), CROP(tr(R.string.crop)),
+}
+
+/** What a drag on the photo does in Text & draw. */
+enum class LayerMode { TEXT, DRAW }
 
 enum class Sheet { EXPORT, VERSIONS, HISTORY, INFO }
 
@@ -78,6 +85,11 @@ class EditorState {
     var sheet by mutableStateOf<Sheet?>(null)
     var vizHdr by mutableStateOf(false)
     var hdrView by mutableStateOf(false)
+    var layerMode by mutableStateOf(LayerMode.TEXT)
+    /** Id of the text or drawing layer being edited, or null. */
+    var selectedLayer by mutableStateOf<String?>(null)
+    var drawColor by mutableIntStateOf(com.vknxworks.lumenctrl.model.Overlay.WHITE)
+    var drawWidth by mutableFloatStateOf(0.008f)
 }
 
 private val toolItems = listOf(
@@ -85,6 +97,7 @@ private val toolItems = listOf(
     NavItem(Tool.EDIT.label, Icons.Outlined.Tune),
     NavItem(Tool.MASKS.label, Icons.Outlined.Layers),
     NavItem(Tool.HEAL.label, Icons.Outlined.Healing),
+    NavItem(Tool.LAYERS.label, Icons.Outlined.TextFields),
     NavItem(Tool.CROP.label, Icons.Outlined.Crop),
 )
 
@@ -102,6 +115,7 @@ fun EditorScreen(vm: LumenViewModel) {
                 Tool.EDIT -> EditPanel(vm, st)
                 Tool.MASKS -> MasksPanel(vm, st)
                 Tool.HEAL -> HealPanel(vm, st)
+                Tool.LAYERS -> LayersPanel(vm, st)
                 Tool.CROP -> CropPanel(vm)
             }
         }

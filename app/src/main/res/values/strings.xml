@@ -475,4 +475,30 @@
     <string name="lut_hint">Import a 3D LUT (.cube file) from a color-grading app or LUT pack to use its look here.</string>
     <string name="heif_no_metadata">HEIC and AVIF are saved without metadata: no camera details, date, location or edit record</string>
     <string name="avif_not_on_this_phone">AVIF needs an AV1 encoder, which this phone doesn\'t have</string>
+    <!-- Text and drawing layers -->
+    <string name="text_and_draw">Text &amp; draw</string>
+    <string name="text">Text</string>
+    <string name="draw">Draw</string>
+    <string name="x_layers">%1$d layers</string>
+    <string name="add">Add</string>
+    <string name="add_text">Add text</string>
+    <string name="edit_text">Edit text</string>
+    <string name="your_text">Your text</string>
+    <string name="delete_text">Delete text</string>
+    <string name="move_text">Move text</string>
+    <string name="text_size">Text size</string>
+    <string name="text_color">Text color</string>
+    <string name="background_box">Background box</string>
+    <string name="text_layers_hint">Add text, then drag it into place on the photo. Tap a text to change it.</string>
+    <string name="drag_the_text_to_move_it">Drag the text on the photo to move it</string>
+    <string name="add_text_below">Add text with the button below</string>
+    <string name="line_width">Line width</string>
+    <string name="draw_with_one_finger">Draw on the photo with one finger</string>
+    <string name="drawing_hint">Each line you draw is its own layer: Undo takes away the last one.</string>
+    <string name="clear">Clear</string>
+    <string name="clear_drawing">Clear drawing</string>
+    <string name="clear_drawing_q">Clear the drawing?</string>
+    <string name="clear_drawing_text">Removes every line you drew on this photo. Text stays. You can undo this.</string>
+    <string name="up_to_x_layers_per_photo">Up to %1$d text and drawing layers per photo</string>
+    <string name="color_x">Color %1$s</string>
 </resources>

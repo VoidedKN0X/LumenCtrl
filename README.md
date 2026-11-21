@@ -28,6 +28,7 @@ Part of the [Ctrl series](#the-ctrl-series) by VKNXWorks.
 - **Offline AI masks:** select the Subject, Background, People, Face skin, Body skin, Hair, Clothes or Sky with one tap, worked out on the phone in about half a second
 - **Offline AI Denoise:** Quality or Fast. It runs once per photo; an Amount slider then blends it in live
 - **Heal and clone** spots, with the source picked for you
+- **Text and drawing:** add text layers (size, colour, optional background box, drag to place) and draw freehand on photos; they're part of the edit, so you can move, change or undo them at any time, and they're drawn into exports, thumbnails and slideshows exactly as in the editor
 - **Crop:** aspect locks, rotate, flip, auto-straighten, and vertical and horizontal perspective
 - **Presets:** 12 looks with an amount slider; **save your own** from any edit (sliders, curves and LUT); copy and paste an edit onto other photos
 - **LUTs:** import 3D LUTs (`.cube` files, up to 96³) from colour-grading apps and LUT packs, and blend them in with an amount slider, on photos and videos
@@ -73,9 +74,10 @@ If the Obtainium button doesn't open the app, add `https://github.com/VoidedKN0X
 
 - **Import:** tap **Import** and pick photos or videos, tap the camera to take one, or share a photo to LumenCtrl from any app. To import from a camera, connect it over USB and tap the USB icon (or accept LumenCtrl's offer when you plug it in).
 - **From your gallery:** in your gallery app, tap **Edit** (or "Edit with") on a photo or video and pick LumenCtrl. It opens straight in the editor; with the app lock on, after you unlock.
-- **Edit:** tap a photo. The bar at the bottom has **Presets**, **Edit** (all the tool groups), **Masks**, **Heal** and **Crop**. Pinch or double-tap to zoom; hold the compare button to see the original.
+- **Edit:** tap a photo. The bar at the bottom has **Presets**, **Edit** (all the tool groups), **Masks**, **Heal**, **Text & draw** and **Crop**. Pinch or double-tap to zoom; hold the compare button to see the original.
 - **Your presets:** in **Presets**, tap **Save current look** to keep this photo's look as a preset; it appears under **Your presets** with its own amount slider.
 - **LUTs:** in **Edit > Color**, tap **Import .cube** and pick a LUT file. It's stored in LumenCtrl and listed there for every photo and video.
+- **Text and drawing:** in **Text & draw**, tap **Add text**, type, and drag it into place; tap a text to change its size or colour. Switch to **Draw** to draw with one finger.
 - **AI masks:** in **Masks**, tap one of the AI chips (Subject, Sky, People and so on), then use the local sliders.
 - **AI Denoise:** in **Edit > Detail**, tap **Quality** (best) or **Fast**, keep the editor open until it's done, then set **Amount**.
 - **HDR:** in **Edit > Light**, turn on **HDR**. Export it with **Ultra HDR** on to keep the extra brightness.

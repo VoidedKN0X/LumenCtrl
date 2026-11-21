@@ -60,6 +60,10 @@ import com.vknxworks.lumenctrl.model.CropRect
 import com.vknxworks.lumenctrl.model.EditParams
 import com.vknxworks.lumenctrl.model.Group
 import com.vknxworks.lumenctrl.model.MaskType
+import com.vknxworks.lumenctrl.model.Overlay
+import com.vknxworks.lumenctrl.render.OverlayPainter
+import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
+import androidx.compose.ui.graphics.nativeCanvas
 import com.vknxworks.lumenctrl.model.Param
 import com.vknxworks.lumenctrl.render.DrawOptions
 import com.vknxworks.lumenctrl.render.EditorRenderer
@@ -401,11 +405,85 @@ fun ImageArea(vm: LumenViewModel, st: EditorState, modifier: Modifier) {
                         onDragCancel = { if (dragIndex >= 0) vm.commit(); dragIndex = -1 },
                     )
                 }
+            st.tool == Tool.LAYERS && st.layerMode == LayerMode.DRAW -> Modifier.pointerInput("layers-draw") {
+                // One finger draws a stroke; it becomes a layer when the finger lifts.
+                var strokeId: String? = null
+                val minStep = 2.dp.toPx()
+                var last = Offset.Zero
+                detectDragGestures(
+                    onDragStart = { pos ->
+                        val m = currentMap ?: return@detectDragGestures
+                        val p = currentParams
+                        if (p.layers.size >= Overlay.MAX_LAYERS) { vm.toast(tr(R.string.up_to_x_layers_per_photo, Overlay.MAX_LAYERS)); return@detectDragGestures }
+                        val (u, v) = m.toOutput(pos.x, pos.y)
+                        val id = java.util.UUID.randomUUID().toString().take(8)
+                        strokeId = id
+                        last = pos
+                        val layer = Overlay(id, Overlay.Kind.DRAW, size = st.drawWidth, color = st.drawColor, points = listOf(u, v))
+                        vm.setLiveParams(p.copy(layers = p.layers + layer), tr(R.string.draw))
+                    },
+                    onDrag = { change, _ ->
+                        val m = currentMap ?: return@detectDragGestures
+                        val id = strokeId ?: return@detectDragGestures
+                        change.consume()
+                        val pos = change.position
+                        if ((pos - last).getDistance() < minStep) return@detectDragGestures
+                        last = pos
+                        val p = currentParams
+                        val (u, v) = m.toOutput(pos.x, pos.y)
+                        vm.setLiveParams(p.copy(layers = p.layers.map {
+                            if (it.id == id && it.points.size < Overlay.MAX_POINTS * 2) it.copy(points = it.points + u + v) else it
+                        }), tr(R.string.draw))
+                    },
+                    onDragEnd = { if (strokeId != null) vm.commit(); strokeId = null },
+                    onDragCancel = { if (strokeId != null) vm.commit(); strokeId = null },
+                )
+            }
+            st.tool == Tool.LAYERS -> Modifier
+                .pointerInput("layers-tap") {
+                    detectTapGestures { pos ->
+                        val m = currentMap ?: return@detectTapGestures
+                        st.selectedLayer = textLayerAt(currentParams, m, pos)
+                    }
+                }
+                .pointerInput("layers-move") {
+                    detectDragGestures(
+                        onDragStart = { pos ->
+                            val m = currentMap ?: return@detectDragGestures
+                            val hit = textLayerAt(currentParams, m, pos)
+                            dragIndex = if (hit != null) 0 else -1
+                            if (hit != null) st.selectedLayer = hit
+                        },
+                        onDrag = { change, drag ->
+                            val m = currentMap ?: return@detectDragGestures
+                            val id = st.selectedLayer
+                            if (dragIndex < 0 || id == null) return@detectDragGestures
+                            change.consume()
+                            val p = currentParams
+                            vm.setLiveParams(p.copy(layers = p.layers.map {
+                                if (it.id == id) it.copy(x = (it.x + drag.x / m.w).coerceIn(0f, 1f), y = (it.y + drag.y / m.h).coerceIn(0f, 1f)) else it
+                            }), tr(R.string.move_text))
+                        },
+                        onDragEnd = { if (dragIndex >= 0) vm.commit(); dragIndex = -1 },
+                        onDragCancel = { if (dragIndex >= 0) vm.commit(); dragIndex = -1 },
+                    )
+                }
             else -> Modifier
         }
 
         Canvas(Modifier.fillMaxSize().then(gestures)) {
             val m = map ?: return@Canvas
+            // Text and drawing layers sit on the finished picture (not shown while cropping or comparing).
+            if (!cropMode && !st.showBefore && !hdrViewOn && params.layers.isNotEmpty()) {
+                drawIntoCanvas { canvas -> OverlayPainter.draw(canvas.nativeCanvas, params.layers, m.left, m.top, m.w, m.h) }
+            }
+            if (st.tool == Tool.LAYERS) params.layers.firstOrNull { it.id == st.selectedLayer && it.kind == Overlay.Kind.TEXT }?.let { o ->
+                val r = OverlayPainter.textBounds(o, m.left, m.top, m.w, m.h)
+                drawRect(
+                    c.accent, Offset(r.left, r.top), Size(r.width(), r.height()),
+                    style = Stroke(1.5.dp.toPx(), pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 8f))),
+                )
+            }
             when (st.tool) {
                 Tool.CROP -> drawCrop(m, params.crop, c.accent)
                 Tool.MASKS -> params.masks.getOrNull(st.selectedMask)?.let { mask ->
@@ -453,6 +531,8 @@ fun ImageArea(vm: LumenViewModel, st: EditorState, modifier: Modifier) {
             st.pickWhiteBalance -> tr(R.string.tap_something_neutral_gray)
             st.pickFocus -> tr(R.string.tap_the_point_to_keep_sharp)
             st.tool == Tool.HEAL && params.spots.isEmpty() -> tr(R.string.tap_a_blemish_to_heal_it)
+            st.tool == Tool.LAYERS && st.layerMode == LayerMode.DRAW -> tr(R.string.draw_with_one_finger)
+            st.tool == Tool.LAYERS && params.layers.none { it.kind == Overlay.Kind.TEXT } -> tr(R.string.add_text_below)
             st.tool == Tool.MASKS && params.masks.getOrNull(st.selectedMask)?.type == MaskType.LUMA -> tr(R.string.tap_to_pick_a_brightness_range)
             st.tool == Tool.MASKS && params.masks.getOrNull(st.selectedMask)?.type == MaskType.COLOR -> tr(R.string.tap_to_pick_a_color)
             st.showBefore -> tr(R.string.before_original)
@@ -490,6 +570,10 @@ fun ImageArea(vm: LumenViewModel, st: EditorState, modifier: Modifier) {
         }
     }
 }
+
+/** The topmost text layer under [pos], or null. */
+private fun textLayerAt(p: EditParams, m: Mapping, pos: Offset): String? =
+    p.layers.lastOrNull { it.kind == Overlay.Kind.TEXT && OverlayPainter.textBounds(it, m.left, m.top, m.w, m.h).contains(pos.x, pos.y) }?.id
 
 private fun maskHandles(mask: com.vknxworks.lumenctrl.model.LocalMask, m: Mapping): List<Offset> = when (mask.type) {
     MaskType.LINEAR -> {

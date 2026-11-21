@@ -153,6 +153,10 @@ object Exporter {
             buf.rewind()
             val out = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
             out.copyPixelsFromBuffer(buf)
+            // Text and drawing layers go on top of the finished picture.
+            if (params.layers.isNotEmpty()) {
+                OverlayPainter.draw(android.graphics.Canvas(out), params.layers, 0f, 0f, w.toFloat(), h.toFloat())
+            }
 
             if (withGainmap && Hdr.supported && params[com.vknxworks.lumenctrl.model.Param.HDR_ON] >= 0.5f) {
                 // Second pass: the gain map (log2 boost / HDR limit) at the same size.
