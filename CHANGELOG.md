@@ -4,6 +4,12 @@ What changed in each LumenCtrl release. Every release on the [Releases page](htt
 
 To publish a new version: bump `versionCode` and `versionName` in `app/build.gradle.kts`, add a section here, and push to `main`. Pushes without a version bump only build; they don't make a release.
 
+## Unreleased
+
+### Fixed
+
+- **German mask messages keep their capital letters.** "Select: sky", "Finding sky on this phone", "Add sky mask" and "No sky found in this photo" put the mask name in lower case, which reads wrong in German, where nouns are always capitalised. German now keeps the capital; the other languages are unchanged. Not run on a phone.
+
 ## v0.4.0 (2026-11-21)
 
 Built and checked by CI only: nothing in this release had been run on a phone when it was published.

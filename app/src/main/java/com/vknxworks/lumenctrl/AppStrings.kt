@@ -27,3 +27,10 @@ object AppStrings {
  * string template would write them.
  */
 fun tr(@StringRes id: Int, vararg args: Any?): String = AppStrings.get(id, args)
+
+/**
+ * A label used inside a sentence ("Select: sky"). Lowercased for languages that write common nouns in lower
+ * case, but kept as it is in German, where nouns are always capitalised ("Auswählen: Himmel").
+ */
+fun inSentence(label: String): String =
+    if (java.util.Locale.getDefault().language == "de") label else label.lowercase()

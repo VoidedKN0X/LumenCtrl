@@ -782,7 +782,7 @@ class LumenViewModel(app: Application) : AndroidViewModel(app), com.vknxworks.lu
         if (params.masks.count { it.type == MaskType.AI } >= AiAtlas.MAX_AI) { message = tr(R.string.up_to_x_ai_masks_per, AiAtlas.MAX_AI); return }
         val app = getApplication<Application>()
         viewModelScope.launch {
-            busy = tr(R.string.finding_x_on_device, kind.label.lowercase())
+            busy = tr(R.string.finding_x_on_device, inSentence(kind.label))
             val t0 = System.currentTimeMillis()
             runCatching {
                 val mask = withContext(Dispatchers.Default) { Segmenter.segment(app, bmp, kind) }
@@ -792,7 +792,7 @@ class LumenViewModel(app: Application) : AndroidViewModel(app), com.vknxworks.lu
                 id
             }.onSuccess { id ->
                 android.util.Log.d("LumenAI", "${kind.name} mask in ${System.currentTimeMillis() - t0} ms")
-                edit(tr(R.string.select_x, kind.label.lowercase())) {
+                edit(tr(R.string.select_x, inSentence(kind.label))) {
                     it.copy(masks = it.masks + LocalMask(id, MaskType.AI, 0f, 0f, 0f, 0f, feather = 0.3f, ai = kind))
                 }
                 onAdded(params.masks.lastIndex)
@@ -1208,7 +1208,7 @@ class LumenViewModel(app: Application) : AndroidViewModel(app), com.vknxworks.lu
             MaskType.LUMA -> LocalMask(id, type, 0.6f, 0f, 1f, 0f, feather = 0.4f)
             MaskType.COLOR -> LocalMask(id, type, 0.6f, 0f, 0.08f, 0f, feather = 0.5f)
         }
-        edit(tr(R.string.add_x_mask, type.label.lowercase())) { it.copy(masks = it.masks + m) }
+        edit(tr(R.string.add_x_mask, inSentence(type.label))) { it.copy(masks = it.masks + m) }
         return params.masks.size - 1
     }
 
