@@ -8,6 +8,8 @@ To publish a new version: bump `versionCode` and `versionName` in `app/build.gra
 
 Changes on `main` that aren't in a release yet. They ship with the next version.
 
+Your library, edits, masks, AI masks, versions and settings from 0.2.0 open unchanged: everything new (LUTs, layers, removals, music) is stored as extra fields in the same files, which older versions simply ignore. If you used the old app lock, see Security below: you'll be asked to choose an app PIN.
+
 ### New
 
 - **"Edit in LumenCtrl" from your gallery.** Gallery apps now offer LumenCtrl when you tap Edit (or "Edit with") on a photo or video. LumenCtrl copies the item into its library and opens it straight in the editor; with the app lock on, it waits until you unlock. The gallery's own file is never changed: your edit is kept in LumenCtrl and saved to the gallery through Export, as with any other photo. Built and checked by CI only; not yet tried on a phone.
@@ -35,6 +37,7 @@ Changes on `main` that aren't in a release yet. They ship with the next version.
 
 - **Checksum list regenerated without the old entries.** `gradle/verification-metadata.xml` was regenerated on CI with the fixed workflow and committed exactly as printed (its SHA-256 matches the log). It now lists only the 345 components the build downloads today; the leftovers from earlier library and build-tool versions are gone.
 - **The checksum list no longer collects old entries.** The hand-started workflow that regenerates `gradle/verification-metadata.xml` used to add the new checksums to the existing file, so entries for library versions that are no longer used stayed in it. It now clears the old entries first and writes only what the build uses, and prints the file's SHA-256 so the copy that gets committed can be checked against the log. Nothing in the app changes.
+
 ## v0.2.0 (2026-11-21)
 
 Built and checked by CI only: nothing in this release had been run on a phone when it was published. It is the first release built with the new build tools (Android Gradle Plugin 9, stricter code shrinking), so update over your installed version and check that your data and settings are still there.
