@@ -13,7 +13,57 @@ data class Preset(val name: String, val values: Map<Param, Float>) {
         curves = Curves(),
         preset = name,
         presetAmount = amount,
+        lut = null,
     )
+}
+
+/**
+ * A look the user saved from one of their own edits: the global sliders, the curves and the LUT, without anything
+ * that belongs to one photo's framing (crop, geometry, focus point, AI Denoise) and without masks or spots.
+ * Kept in `presets.json` (see data/UserPresets). In an edit it is named [key].
+ */
+data class UserPreset(
+    val id: String,
+    val name: String,
+    val values: Map<String, Float>,
+    val curves: Curves,
+    val lut: String?,
+) {
+    val key: String get() = KEY_PREFIX + id
+
+    /** Like [Preset.applyTo]: replaces the global look at [amount] (0..2) and keeps framing, masks and spots. */
+    fun applyTo(base: EditParams, amount: Float = 1f): EditParams {
+        val look = values.filterKeys { it !in Param.PER_PHOTO && it != Param.LUT_AMOUNT.key }.mapNotNull { (k, v) ->
+            val p = Param.byKey[k] ?: return@mapNotNull null
+            k to (p.default + (v - p.default) * amount).coerceIn(p.min, p.max)
+        }.toMap()
+        // The LUT's strength fades toward "no LUT" (0), not toward the slider's default.
+        val lutAmount = if (lut != null) mapOf(Param.LUT_AMOUNT.key to ((values[Param.LUT_AMOUNT.key] ?: 1f) * amount).coerceIn(0f, 1f)) else emptyMap()
+        return base.copy(
+            values = base.values.filterKeys { it in Param.PER_PHOTO } + look + lutAmount,
+            curves = Curves(
+                blend(curves.master, amount), blend(curves.red, amount), blend(curves.green, amount), blend(curves.blue, amount),
+            ),
+            preset = key,
+            presetAmount = amount,
+            lut = lut,
+        )
+    }
+
+    private fun blend(pts: List<CurvePoint>, amount: Float): List<CurvePoint> =
+        if (pts == Curves.IDENTITY) pts else pts.map { CurvePoint(it.x, (it.x + (it.y - it.x) * amount).coerceIn(0f, 1f)) }
+
+    companion object {
+        const val KEY_PREFIX = "user:"
+
+        /** A preset made from [p]'s global look. */
+        fun from(id: String, name: String, p: EditParams) = UserPreset(
+            id, name,
+            values = p.values.filterKeys { it !in Param.PER_PHOTO },
+            curves = p.curves,
+            lut = p.lut,
+        )
+    }
 }
 
 object Presets {

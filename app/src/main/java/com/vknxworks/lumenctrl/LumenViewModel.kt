@@ -258,6 +258,111 @@ class LumenViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    // ---- Your presets and LUTs ----
+    private val presetStore = com.vknxworks.lumenctrl.data.UserPresets(app.filesDir)
+    var userPresets by mutableStateOf<List<com.vknxworks.lumenctrl.model.UserPreset>>(emptyList()); private set
+    var luts by mutableStateOf<List<com.vknxworks.lumenctrl.data.LutInfo>>(emptyList()); private set
+
+    private fun loadLooks() {
+        viewModelScope.launch {
+            userPresets = withContext(Dispatchers.IO) { presetStore.load() }
+            luts = withContext(Dispatchers.IO) { com.vknxworks.lumenctrl.data.Luts.list() }
+        }
+    }
+
+    /** Saves the open photo's global look (sliders, curves, LUT; not crop, masks or spots) as a preset. */
+    fun saveUserPreset(name: String) {
+        val p = params
+        val preset = com.vknxworks.lumenctrl.model.UserPreset.from(UUID.randomUUID().toString(), name.trim().ifBlank { tr(R.string.my_preset) }.take(40), p)
+        userPresets = userPresets + preset
+        val list = userPresets
+        viewModelScope.launch {
+            runCatching { withContext(Dispatchers.IO) { presetStore.save(list) } }
+                .onSuccess { message = tr(R.string.saved_preset_x, preset.name) }
+                .onFailure { message = tr(R.string.couldnt_save_the_preset_x, it.message) }
+        }
+        // The open photo now wears exactly this preset.
+        edit(tr(R.string.preset_x, preset.name)) { it.copy(preset = preset.key, presetAmount = 1f) }
+    }
+
+    fun renameUserPreset(id: String, name: String) {
+        userPresets = userPresets.map { if (it.id == id) it.copy(name = name.trim().ifBlank { it.name }.take(40)) else it }
+        val list = userPresets
+        viewModelScope.launch { runCatching { withContext(Dispatchers.IO) { presetStore.save(list) } } }
+    }
+
+    /** Deletes a preset. Photos that used it keep their look; only the preset's name disappears from them. */
+    fun deleteUserPreset(id: String) {
+        userPresets = userPresets.filter { it.id != id }
+        val list = userPresets
+        viewModelScope.launch { runCatching { withContext(Dispatchers.IO) { presetStore.save(list) } } }
+    }
+
+    fun userPresetFor(key: String?): com.vknxworks.lumenctrl.model.UserPreset? =
+        if (key == null || !key.startsWith(com.vknxworks.lumenctrl.model.UserPreset.KEY_PREFIX)) null
+        else userPresets.firstOrNull { it.key == key }
+
+    /** Reads a `.cube` file, stores it and puts it on the open photo. */
+    fun importLut(uri: Uri) {
+        val app = getApplication<Application>()
+        viewModelScope.launch {
+            busy = tr(R.string.importing_lut)
+            runCatching {
+                withContext(Dispatchers.IO) {
+                    val name = runCatching {
+                        app.contentResolver.query(uri, arrayOf(android.provider.OpenableColumns.DISPLAY_NAME), null, null, null)?.use {
+                            if (it.moveToFirst()) it.getString(0) else null
+                        }
+                    }.getOrNull()?.substringBeforeLast('.')
+                    val bytes = app.contentResolver.openInputStream(uri)!!.use { input ->
+                        val out = java.io.ByteArrayOutputStream()
+                        val buf = ByteArray(64 * 1024)
+                        while (true) {
+                            val n = input.read(buf)
+                            if (n < 0) break
+                            out.write(buf, 0, n)
+                            if (out.size() > MAX_LUT_BYTES) throw com.vknxworks.lumenctrl.model.CubeLut.Invalid(tr(R.string.the_file_is_too_large))
+                        }
+                        out.toByteArray()
+                    }
+                    val lut = com.vknxworks.lumenctrl.model.CubeLut.parse(String(bytes, Charsets.UTF_8))
+                    com.vknxworks.lumenctrl.data.Luts.add(lut, lut.title ?: name ?: "LUT")
+                }
+            }.onSuccess { info ->
+                luts = luts + info
+                if (openPhoto != null) setLut(info.id)
+                message = tr(R.string.imported_lut_x, info.name)
+            }.onFailure {
+                message = if (it is com.vknxworks.lumenctrl.model.CubeLut.Invalid) tr(R.string.not_a_usable_3d_lut_x, it.message)
+                else tr(R.string.couldnt_import_the_lut_x, it.message)
+            }
+            busy = null
+        }
+    }
+
+    /** Puts a LUT on the open photo (null takes it off). */
+    fun setLut(id: String?) {
+        val label = id?.let { i -> luts.firstOrNull { it.id == i }?.name } ?: tr(R.string.no_lut)
+        edit(tr(R.string.lut_x, label)) { it.copy(lut = id).with(Param.LUT_AMOUNT, 1f) }
+    }
+
+    fun renameLut(id: String, name: String) {
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) { com.vknxworks.lumenctrl.data.Luts.rename(id, name) }
+            luts = withContext(Dispatchers.IO) { com.vknxworks.lumenctrl.data.Luts.list() }
+        }
+    }
+
+    /** Deletes an imported LUT. Edits that used it render without it from now on. */
+    fun deleteLut(id: String) {
+        if (params.lut == id) edit(tr(R.string.lut_x, tr(R.string.no_lut))) { it.copy(lut = null) }
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) { com.vknxworks.lumenctrl.data.Luts.delete(id) }
+            luts = withContext(Dispatchers.IO) { com.vknxworks.lumenctrl.data.Luts.list() }
+            thumbVersion++
+        }
+    }
+
     // ---- Slideshow / collage ----
     var showIds by mutableStateOf<List<String>>(emptyList()); private set
 
@@ -337,7 +442,7 @@ class LumenViewModel(app: Application) : AndroidViewModel(app) {
     private val undoStack = ArrayDeque<Step>()
     private val redoStack = ArrayDeque<Step>()
 
-    init { refresh() }
+    init { refresh(); loadLooks() }
 
     fun refresh() {
         viewModelScope.launch {
@@ -823,4 +928,9 @@ class LumenViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     private fun stamp() = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
+
+    private companion object {
+        /** A 96³ .cube file is about 25 MB of text; anything bigger isn't a LUT LumenCtrl can use. */
+        const val MAX_LUT_BYTES = 32L * 1024 * 1024
+    }
 }

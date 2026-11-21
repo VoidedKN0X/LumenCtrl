@@ -24,6 +24,8 @@ import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
@@ -115,16 +117,26 @@ private fun PanelHeader(left: String, right: String? = null, rightAccent: Boolea
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun PresetPanel(vm: LumenViewModel) {
-    val active = Presets.byName(vm.params.preset)
-    Column(Modifier.fillMaxSize()) {
-        PanelHeader(tr(R.string.presets), tr(R.string.x_looks, Presets.all.size))
-        Column(Modifier.padding(horizontal = 20.dp)) {
-            if (active != null && active.values.isNotEmpty()) {
+    val builtIn = Presets.byName(vm.params.preset)
+    val mine = vm.userPresetFor(vm.params.preset)
+    var dialog by remember { mutableStateOf<String?>(null) }
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+        PanelHeader(tr(R.string.presets), tr(R.string.x_looks, Presets.all.size + vm.userPresets.size))
+        Column(Modifier.padding(start = 20.dp, end = 20.dp, bottom = 12.dp)) {
+            if (builtIn != null && builtIn.values.isNotEmpty()) {
                 LabeledSlider(
-                    label = tr(R.string.x_amount, active.name), valueText = "${(vm.params.presetAmount * 100).toInt()}",
+                    label = tr(R.string.x_amount, builtIn.name), valueText = "${(vm.params.presetAmount * 100).toInt()}",
                     value = vm.params.presetAmount, range = 0f..2f, origin = 0f, changed = vm.params.presetAmount != 1f,
-                    onChange = { vm.setLiveParams(active.applyTo(vm.params, it), tr(R.string.preset_amount)) },
-                    onDone = vm::commit, onReset = { vm.edit(tr(R.string.preset_amount)) { active.applyTo(it, 1f) } },
+                    onChange = { vm.setLiveParams(builtIn.applyTo(vm.params, it), tr(R.string.preset_amount)) },
+                    onDone = vm::commit, onReset = { vm.edit(tr(R.string.preset_amount)) { builtIn.applyTo(it, 1f) } },
+                )
+            }
+            if (mine != null) {
+                LabeledSlider(
+                    label = tr(R.string.x_amount, mine.name), valueText = "${(vm.params.presetAmount * 100).toInt()}",
+                    value = vm.params.presetAmount, range = 0f..2f, origin = 0f, changed = vm.params.presetAmount != 1f,
+                    onChange = { vm.setLiveParams(mine.applyTo(vm.params, it), tr(R.string.preset_amount)) },
+                    onDone = vm::commit, onReset = { vm.edit(tr(R.string.preset_amount)) { mine.applyTo(it, 1f) } },
                 )
             }
             FlowRow(
@@ -137,7 +149,81 @@ fun PresetPanel(vm: LumenViewModel) {
                     CtrlChip(preset.name, selected, onClick = { vm.edit(tr(R.string.preset_x, preset.name)) { preset.applyTo(it) } })
                 }
             }
+            MonoLabel(tr(R.string.your_presets), Modifier.padding(start = 4.dp, top = 14.dp, bottom = 6.dp))
+            FlowRow(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                vm.userPresets.forEach { preset ->
+                    CtrlChip(preset.name, vm.params.preset == preset.key, onClick = { vm.edit(tr(R.string.preset_x, preset.name)) { preset.applyTo(it) } })
+                }
+                CtrlChip(tr(R.string.save_current_look), false, icon = Icons.Outlined.Add, onClick = { dialog = "save" })
+            }
+            if (vm.userPresets.isEmpty()) {
+                MonoLabel(tr(R.string.save_current_look_hint), Modifier.padding(start = 4.dp, top = 6.dp))
+            }
+            if (mine != null) {
+                Row(Modifier.padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    CtrlButton(tr(R.string.rename), onClick = { dialog = "rename" }, style = CtrlButtonStyle.Ghost)
+                    CtrlButton(tr(R.string.delete_preset), onClick = { dialog = "delete" }, icon = Icons.Outlined.Delete, style = CtrlButtonStyle.Ghost)
+                }
+            }
         }
+    }
+    when (dialog) {
+        "save" -> com.vknxworks.lumenctrl.ui.TextDialog(
+            tr(R.string.save_as_preset), "", tr(R.string.save),
+            onConfirm = { vm.saveUserPreset(it) }, onDismiss = { dialog = null },
+        )
+        "rename" -> if (mine != null) com.vknxworks.lumenctrl.ui.TextDialog(
+            tr(R.string.rename_preset), mine.name, tr(R.string.rename),
+            onConfirm = { vm.renameUserPreset(mine.id, it) }, onDismiss = { dialog = null },
+        ) else dialog = null
+        "delete" -> if (mine != null) com.vknxworks.lumenctrl.ui.ConfirmDialog(
+            tr(R.string.delete_x_q, mine.name), tr(R.string.delete_preset_text), tr(R.string.delete),
+            onConfirm = { vm.deleteUserPreset(mine.id) }, onDismiss = { dialog = null },
+        ) else dialog = null
+    }
+}
+
+/** LUT picker in Edit > Color: your imported .cube LUTs, import, amount, rename and delete. */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun LutTools(vm: LumenViewModel) {
+    val current = vm.params.lut
+    val info = vm.luts.firstOrNull { it.id == current }
+    var dialog by remember { mutableStateOf<String?>(null) }
+    val picker = androidx.activity.compose.rememberLauncherForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.OpenDocument(),
+    ) { uri -> if (uri != null) vm.importLut(uri) }
+    Column(Modifier.padding(top = 12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        MonoLabel(tr(R.string.lut), Modifier.padding(start = 4.dp))
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            CtrlChip(tr(R.string.none), current == null, onClick = { if (current != null) vm.setLut(null) })
+            vm.luts.forEach { l -> CtrlChip(l.name, current == l.id, onClick = { if (current != l.id) vm.setLut(l.id) }) }
+            CtrlChip(tr(R.string.import_cube), false, icon = Icons.Outlined.Add, onClick = { picker.launch(arrayOf("*/*")) })
+        }
+        if (current != null && info == null) MonoLabel(tr(R.string.this_lut_was_deleted), color = Ctrl.colors.muted)
+        if (info != null) {
+            ParamSlider(vm, Param.LUT_AMOUNT)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                CtrlButton(tr(R.string.rename), onClick = { dialog = "rename" }, style = CtrlButtonStyle.Ghost)
+                CtrlButton(tr(R.string.delete_lut), onClick = { dialog = "delete" }, icon = Icons.Outlined.Delete, style = CtrlButtonStyle.Ghost)
+            }
+        } else if (vm.luts.isEmpty()) {
+            MonoLabel(tr(R.string.lut_hint), Modifier.padding(start = 4.dp))
+        }
+    }
+    when (dialog) {
+        "rename" -> if (info != null) com.vknxworks.lumenctrl.ui.TextDialog(
+            tr(R.string.rename_lut), info.name, tr(R.string.rename),
+            onConfirm = { vm.renameLut(info.id, it) }, onDismiss = { dialog = null },
+        ) else dialog = null
+        "delete" -> if (info != null) com.vknxworks.lumenctrl.ui.ConfirmDialog(
+            tr(R.string.delete_x_q, info.name), tr(R.string.delete_lut_text), tr(R.string.delete),
+            onConfirm = { vm.deleteLut(info.id) }, onDismiss = { dialog = null },
+        ) else dialog = null
     }
 }
 
@@ -190,12 +276,15 @@ private fun GroupTools(vm: LumenViewModel, st: EditorState) {
             if (vm.openPhoto?.isVideo != true) HdrTools(vm, st) // HDR export is photo-only
 
         }
-        Group.COLOR -> row {
-            CtrlButton(
-                if (st.pickWhiteBalance) tr(R.string.tap_the_photo) else tr(R.string.pick_white_balance),
-                onClick = { st.pickWhiteBalance = !st.pickWhiteBalance }, icon = Icons.Outlined.Colorize,
-                selected = st.pickWhiteBalance,
-            )
+        Group.COLOR -> Column {
+            row {
+                CtrlButton(
+                    if (st.pickWhiteBalance) tr(R.string.tap_the_photo) else tr(R.string.pick_white_balance),
+                    onClick = { st.pickWhiteBalance = !st.pickWhiteBalance }, icon = Icons.Outlined.Colorize,
+                    selected = st.pickWhiteBalance,
+                )
+            }
+            LutTools(vm)
         }
         Group.BLUR -> row {
             CtrlChip(tr(R.string.radial), vm.params[Param.BLUR_MODE] < 0.5f, onClick = { vm.edit(tr(R.string.blur_mode)) { it.with(Param.BLUR_MODE, 0f) } })

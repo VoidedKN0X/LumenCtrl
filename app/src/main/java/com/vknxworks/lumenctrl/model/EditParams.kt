@@ -155,7 +155,10 @@ enum class Param(
     ASPECT("aspect", tr(R.string.aspect), Group.GEOMETRY, tr(R.string.transform), -1f, 1f),
     SCALE("scale", tr(R.string.scale), Group.GEOMETRY, tr(R.string.transform), 0.5f, 1.5f, 1f, Fmt.SCALE),
     OFFSET_X("offsetX", tr(R.string.x_offset), Group.GEOMETRY, tr(R.string.transform), -1f, 1f),
-    OFFSET_Y("offsetY", tr(R.string.y_offset), Group.GEOMETRY, tr(R.string.transform), -1f, 1f);
+    OFFSET_Y("offsetY", tr(R.string.y_offset), Group.GEOMETRY, tr(R.string.transform), -1f, 1f),
+
+    // LUT strength (the LUT itself is EditParams.lut); its slider sits with the LUT picker in Color.
+    LUT_AMOUNT("lutAmount", tr(R.string.amount), Group.COLOR, tr(R.string.lut), 0f, 1f, 1f, Fmt.PERCENT, ui = false);
 
     fun format(v: Float): String = when (fmt) {
         Fmt.EV -> "%+.2f EV".format(v)
@@ -194,6 +197,8 @@ data class EditParams(
     val presetAmount: Float = 1f,
     /** Trim / mute / speed; only used for videos. */
     val video: VideoEdit = VideoEdit(),
+    /** Id of an imported 3D LUT (see data/Luts), applied after color grading at [Param.LUT_AMOUNT]. */
+    val lut: String? = null,
 ) {
     operator fun get(p: Param): Float = values[p.key] ?: p.default
 
@@ -202,7 +207,7 @@ data class EditParams(
 
     fun isDefault(): Boolean =
         Param.entries.all { get(it) == it.default } && quarterTurns == 0 && !flipH &&
-            crop.isFull() && curves.isIdentity() && masks.isEmpty() && spots.isEmpty() && video.isDefault()
+            crop.isFull() && curves.isIdentity() && masks.isEmpty() && spots.isEmpty() && video.isDefault() && lut == null
 
     /** Lightroom-style paste: global adjustments and curves; keeps this photo's framing, masks and spots. */
     fun pasteAdjustmentsFrom(other: EditParams): EditParams = copy(
@@ -210,6 +215,7 @@ data class EditParams(
         curves = other.curves,
         preset = other.preset,
         presetAmount = other.presetAmount,
+        lut = other.lut,
     )
 
     fun resetGeometry(): EditParams = copy(
@@ -234,10 +240,14 @@ data class EditParams(
             .put("preset", preset ?: JSONObject.NULL)
             .put("presetAmount", presetAmount.toDouble())
             .put("video", video.toJson())
+            .put("lut", lut ?: JSONObject.NULL)
             .toString(2)
     }
 
     companion object {
+        /** LUT ids are made by LumenCtrl (UUIDs); anything else in a sidecar is ignored. */
+        private val LUT_ID = Regex("^[a-f0-9-]{8,40}$")
+
         fun fromJson(json: String): EditParams {
             val o = JSONObject(json)
             val v = o.optJSONObject("values")
@@ -261,6 +271,7 @@ data class EditParams(
                 preset = if (o.isNull("preset")) null else o.optString("preset").ifBlank { null },
                 presetAmount = o.optDouble("presetAmount", 1.0).toFloat().coerceIn(0f, 2f),
                 video = VideoEdit.fromJson(o.optJSONObject("video")),
+                lut = if (o.isNull("lut")) null else o.optString("lut").takeIf { LUT_ID.matches(it) },
             )
         }
     }

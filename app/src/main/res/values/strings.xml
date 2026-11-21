@@ -447,4 +447,30 @@
     <string name="select_2_to_7_exposures">Select 2 to 7 exposures</string>
     <string name="opening_for_editing">Opening for editing…</string>
     <string name="cant_open_this_file_for_editing">Couldn\'t open this file for editing</string>
+    <!-- Your presets and LUTs -->
+    <string name="my_preset">My preset</string>
+    <string name="saved_preset_x">Saved preset \"%1$s\"</string>
+    <string name="couldnt_save_the_preset_x">Couldn\'t save the preset: %1$s</string>
+    <string name="your_presets">Your presets</string>
+    <string name="save_current_look">Save current look</string>
+    <string name="save_current_look_hint">Saves this photo\'s sliders, curves and LUT as a preset you can use on other photos. Crop, masks and spots stay with the photo.</string>
+    <string name="save_as_preset">Save as preset</string>
+    <string name="rename_preset">Rename preset</string>
+    <string name="delete_preset">Delete preset</string>
+    <string name="delete_x_q">Delete \"%1$s\"?</string>
+    <string name="delete_preset_text">Photos that use it keep their look. The preset itself is deleted for good.</string>
+    <string name="lut">LUT</string>
+    <string name="lut_x">LUT: %1$s</string>
+    <string name="no_lut">none</string>
+    <string name="import_cube">Import .cube</string>
+    <string name="importing_lut">Importing LUT…</string>
+    <string name="the_file_is_too_large">the file is too large</string>
+    <string name="imported_lut_x">Imported LUT \"%1$s\"</string>
+    <string name="not_a_usable_3d_lut_x">Not a usable 3D LUT (%1$s)</string>
+    <string name="couldnt_import_the_lut_x">Couldn\'t import the LUT: %1$s</string>
+    <string name="this_lut_was_deleted">The LUT this edit used was deleted</string>
+    <string name="rename_lut">Rename LUT</string>
+    <string name="delete_lut">Delete LUT</string>
+    <string name="delete_lut_text">Photos and videos that use it lose that look. The LUT is deleted for good.</string>
+    <string name="lut_hint">Import a 3D LUT (.cube file) from a color-grading app or LUT pack to use its look here.</string>
 </resources>

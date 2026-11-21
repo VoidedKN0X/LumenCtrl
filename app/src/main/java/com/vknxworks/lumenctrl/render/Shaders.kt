@@ -10,7 +10,7 @@ import com.vknxworks.lumenctrl.model.Param
  * heal spots -> local masks -> lens blur -> defringe -> noise reduction ->
  * sharpen -> texture -> (linear) white balance, exposure, lens vignetting,
  * dehaze, glow -> tone -> clarity -> contrast -> curves LUT -> fade ->
- * vibrance/saturation -> color mixer -> color grading -> vignette -> grain.
+ * vibrance/saturation -> color mixer -> color grading -> 3D LUT -> vignette -> grain.
  *
  * Global params are packed into vec4 u_p[]; the #defines below are generated
  * from the Param enum so names stay in sync.
@@ -69,6 +69,11 @@ uniform int u_spotCount;
 uniform vec4 u_spot[MAXS * 2];
 uniform int u_curveOn;
 uniform int u_mixOn;
+uniform highp sampler3D u_lut3d;  // imported 3D LUT (.cube), if the edit has one
+uniform int u_lutOn;
+uniform vec3 u_lutMin;        // LUT input domain start
+uniform vec3 u_lutScale;      // 1 / (domain end - start)
+uniform float u_lutN;         // LUT size per axis
 
 float P(int i) { return u_p[i / 4][i % 4]; }
 float luma(vec3 c) { return dot(c, vec3(0.2126, 0.7152, 0.0722)); }
@@ -408,6 +413,13 @@ void main() {
            + wm * ((hue2rgb(P_midHue) - 0.5) * P_midSat * 0.3 + P_midLum * 0.2)
            + wh * ((hue2rgb(P_highlightHue) - 0.5) * P_highlightSat * 0.35 + P_highlightLum * 0.25)
            + (hue2rgb(P_globalHue) - 0.5) * P_globalSat * 0.25 + P_globalLum * 0.15;
+    }
+
+    // Imported 3D LUT, blended in by its amount (texel centres: the table's corners map to 0 and 1).
+    if (u_lutOn == 1 && P_lutAmount > 0.001) {
+        vec3 t = clamp((clamp(c, 0.0, 1.0) - u_lutMin) * u_lutScale, 0.0, 1.0);
+        t = t * ((u_lutN - 1.0) / u_lutN) + 0.5 / u_lutN;
+        c = mix(c, texture(u_lut3d, t).rgb, P_lutAmount);
     }
 
     // Post-crop vignette with midpoint, roundness, feather and highlight priority.

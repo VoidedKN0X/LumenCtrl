@@ -87,6 +87,11 @@ class Catalog(private val context: Context) {
     /** Small copies of unedited photos for the library grid (cache only, see [ImageLoader.thumbDir]). */
     private val thumbDir = File(context.cacheDir, "thumbs").also { ImageLoader.thumbDir = it }
 
+    init {
+        // Imported LUTs live next to the library; every renderer looks them up by id.
+        Luts.init(context.filesDir)
+    }
+
     data class Photo(
         val id: String,
         val original: File,

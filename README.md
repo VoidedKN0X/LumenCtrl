@@ -29,7 +29,8 @@ Part of the [Ctrl series](#the-ctrl-series) by VKNXWorks.
 - **Offline AI Denoise:** Quality or Fast. It runs once per photo; an Amount slider then blends it in live
 - **Heal and clone** spots, with the source picked for you
 - **Crop:** aspect locks, rotate, flip, auto-straighten, and vertical and horizontal perspective
-- **Presets:** 12 looks with an amount slider; copy and paste an edit onto other photos
+- **Presets:** 12 looks with an amount slider; **save your own** from any edit (sliders, curves and LUT); copy and paste an edit onto other photos
+- **LUTs:** import 3D LUTs (`.cube` files, up to 96³) from colour-grading apps and LUT packs, and blend them in with an amount slider, on photos and videos
 - **HDR:**
   - Edit in HDR with an HDR limit, highlight boost and separate SDR highlights
   - See it on HDR screens, and visualise which parts go brighter than SDR white
@@ -73,6 +74,8 @@ If the Obtainium button doesn't open the app, add `https://github.com/VoidedKN0X
 - **Import:** tap **Import** and pick photos or videos, tap the camera to take one, or share a photo to LumenCtrl from any app. To import from a camera, connect it over USB and tap the USB icon (or accept LumenCtrl's offer when you plug it in).
 - **From your gallery:** in your gallery app, tap **Edit** (or "Edit with") on a photo or video and pick LumenCtrl. It opens straight in the editor; with the app lock on, after you unlock.
 - **Edit:** tap a photo. The bar at the bottom has **Presets**, **Edit** (all the tool groups), **Masks**, **Heal** and **Crop**. Pinch or double-tap to zoom; hold the compare button to see the original.
+- **Your presets:** in **Presets**, tap **Save current look** to keep this photo's look as a preset; it appears under **Your presets** with its own amount slider.
+- **LUTs:** in **Edit > Color**, tap **Import .cube** and pick a LUT file. It's stored in LumenCtrl and listed there for every photo and video.
 - **AI masks:** in **Masks**, tap one of the AI chips (Subject, Sky, People and so on), then use the local sliders.
 - **AI Denoise:** in **Edit > Detail**, tap **Quality** (best) or **Fast**, keep the editor open until it's done, then set **Amount**.
 - **HDR:** in **Edit > Light**, turn on **HDR**. Export it with **Ultra HDR** on to keep the extra brightness.
@@ -135,6 +138,7 @@ LumenCtrl follows the design of desktop raw editors, written from scratch for An
 
 - **One shader for everything.** The whole develop pipeline (spots, masks, lens corrections, noise reduction, sharpening, tone, curves, color, grading, effects, HDR) is a single OpenGL ES 3.0 fragment shader. The preview, the histogram, exports, thumbnails and video frames all go through it, so what you see is what you export.
 - **Edits are data.** Each slider is one entry in the `Param` list; the edit is saved as JSON beside the untouched original.
+- **LUTs** (`model/CubeLut.kt`, `data/Luts.kt`): a `.cube` file is parsed once on import and stored as a small binary table; the shader samples it as a 3D texture (half floats, trilinear) after colour grading, so preview, export and video all use the same table.
 - **AI masks** (`edit/Segmenter.kt`): two bundled segmentation models find people, animals, vehicles and body parts. The winning class at each pixel becomes the mask, a guided filter snaps it to the photo's edges, and it's stored beside the photo. Sky uses LumenCtrl's own rules: smooth, bright or blue, connected to the top edge, and not warm-tinted.
 - **AI Denoise** (`edit/Denoiser.kt`): the photo (up to 4096 px) is processed in 256 px tiles with 16 px overlaps. Each tile's average color is pinned to the original's, and the coarse tones are taken from the original, so the result has no tile seams or color casts. It's saved once as a denoised copy and blended live with Amount. On the test phone, a 4.3 MP photo takes about 20 s with Fast and 30 s with Quality.
 - **HDR** (`render/Hdr.kt`, `edit/HdrMerge.kt`): the shader also renders a gain map, the extra brightness each pixel should get on an HDR screen. Exports pair it with the SDR image as an Ultra HDR JPEG. Photos that already have a gain map keep their HDR. Merge to HDR aligns the brackets, merges them weighted by exposure, tone-maps the result and stores a +3 stop gain map.

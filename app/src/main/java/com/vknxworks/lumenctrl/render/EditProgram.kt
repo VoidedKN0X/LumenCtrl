@@ -58,6 +58,8 @@ class EditProgram {
         program = link(Shaders.VERTEX, Shaders.FRAGMENT)
         locations.clear()
         lutSig = null
+        // A new (or lost and re-created) context has none of the old textures.
+        lutTex3d = 0; dummyTex3d = 0; lutLoaded = null
         val quad = floatArrayOf(-1f, -1f, 1f, -1f, -1f, 1f, 1f, 1f)
         val buf = ByteBuffer.allocateDirect(quad.size * 4).order(ByteOrder.nativeOrder()).asFloatBuffer().put(quad)
         buf.position(0)
@@ -86,6 +88,44 @@ class EditProgram {
     }
 
     private var blackTex = 0
+
+    /** 3D texture of the edit's LUT ([lutLoaded] says which), and a 1×1×1 stand-in so the sampler is always valid. */
+    private var lutTex3d = 0
+    private var lutLoaded: String? = null
+    private var dummyTex3d = 0
+
+    private fun new3dTexture(): Int {
+        val ids = IntArray(1)
+        GL.glGenTextures(1, ids, 0)
+        GL.glBindTexture(GL.GL_TEXTURE_3D, ids[0])
+        GL.glTexParameteri(GL.GL_TEXTURE_3D, GL.GL_TEXTURE_MIN_FILTER, GL.GL_LINEAR)
+        GL.glTexParameteri(GL.GL_TEXTURE_3D, GL.GL_TEXTURE_MAG_FILTER, GL.GL_LINEAR)
+        GL.glTexParameteri(GL.GL_TEXTURE_3D, GL.GL_TEXTURE_WRAP_S, GL.GL_CLAMP_TO_EDGE)
+        GL.glTexParameteri(GL.GL_TEXTURE_3D, GL.GL_TEXTURE_WRAP_T, GL.GL_CLAMP_TO_EDGE)
+        GL.glTexParameteri(GL.GL_TEXTURE_3D, GL.GL_TEXTURE_WRAP_R, GL.GL_CLAMP_TO_EDGE)
+        return ids[0]
+    }
+
+    /** Uploads [lut] as RGBA16F (half floats keep smooth gradients; ES 3.0 filters them linearly). */
+    private fun uploadLut3d(lut: com.vknxworks.lumenctrl.model.CubeLut) {
+        if (lutTex3d == 0) lutTex3d = new3dTexture()
+        val n = lut.size
+        val count = n * n * n
+        val buf = ByteBuffer.allocateDirect(count * 8).order(ByteOrder.nativeOrder())
+        val sb = buf.asShortBuffer()
+        val one = android.util.Half.toHalf(1f)
+        for (i in 0 until count) {
+            sb.put(android.util.Half.toHalf(lut.data[i * 3]))
+            sb.put(android.util.Half.toHalf(lut.data[i * 3 + 1]))
+            sb.put(android.util.Half.toHalf(lut.data[i * 3 + 2]))
+            sb.put(one)
+        }
+        buf.position(0)
+        GL.glBindTexture(GL.GL_TEXTURE_3D, lutTex3d)
+        GL.glPixelStorei(GL.GL_UNPACK_ALIGNMENT, 2)
+        GL.glTexImage3D(GL.GL_TEXTURE_3D, 0, GL.GL_RGBA16F, n, n, n, 0, GL.GL_RGBA, GL.GL_HALF_FLOAT, buf)
+        GL.glPixelStorei(GL.GL_UNPACK_ALIGNMENT, 4)
+    }
 
     private fun uploadLut(bytes: ByteArray) {
         val buf = ByteBuffer.allocateDirect(bytes.size).order(ByteOrder.nativeOrder()).put(bytes)
@@ -131,6 +171,28 @@ class EditProgram {
         if (denoised != null) {
             val ratio = maxOf(texW, texH).toFloat() / maxOf(denoised.w, denoised.h)
             GL.glUniform1f(loc("u_dnLod"), (Math.log(ratio.toDouble()) / Math.log(2.0)).toFloat())
+        }
+        // Texture unit 5: the 3D LUT. Always bound and assigned, so no two sampler types ever share a unit.
+        val lutId = params.lut
+        val lut = if (lutId != null && params[Param.LUT_AMOUNT] > 0f) com.vknxworks.lumenctrl.data.Luts.get(lutId) else null
+        if (lut != null && lutLoaded != lutId) { uploadLut3d(lut); lutLoaded = lutId }
+        if (dummyTex3d == 0) {
+            dummyTex3d = new3dTexture()
+            val px = ByteBuffer.allocateDirect(4).order(ByteOrder.nativeOrder()).put(byteArrayOf(0, 0, 0, -1))
+            px.position(0)
+            GL.glTexImage3D(GL.GL_TEXTURE_3D, 0, GL.GL_RGBA8, 1, 1, 1, 0, GL.GL_RGBA, GL.GL_UNSIGNED_BYTE, px)
+        }
+        GL.glActiveTexture(GL.GL_TEXTURE5)
+        GL.glBindTexture(GL.GL_TEXTURE_3D, if (lut != null) lutTex3d else dummyTex3d)
+        GL.glUniform1i(loc("u_lut3d"), 5)
+        GL.glUniform1i(loc("u_lutOn"), if (lut != null) 1 else 0)
+        if (lut != null) {
+            GL.glUniform3f(loc("u_lutMin"), lut.domainMin[0], lut.domainMin[1], lut.domainMin[2])
+            GL.glUniform3f(
+                loc("u_lutScale"),
+                1f / (lut.domainMax[0] - lut.domainMin[0]), 1f / (lut.domainMax[1] - lut.domainMin[1]), 1f / (lut.domainMax[2] - lut.domainMin[2]),
+            )
+            GL.glUniform1f(loc("u_lutN"), lut.size.toFloat())
         }
         GL.glActiveTexture(GL.GL_TEXTURE0)
         GL.glUniform1i(loc("u_gainOn"), if (gain != null) 1 else 0)
@@ -196,7 +258,9 @@ class EditProgram {
         if (vbo != 0) GL.glDeleteBuffers(1, intArrayOf(vbo), 0)
         if (lutTex != 0) GL.glDeleteTextures(1, intArrayOf(lutTex), 0)
         if (blackTex != 0) GL.glDeleteTextures(1, intArrayOf(blackTex), 0)
-        program = 0; vbo = 0; lutTex = 0; blackTex = 0
+        if (lutTex3d != 0) GL.glDeleteTextures(1, intArrayOf(lutTex3d), 0)
+        if (dummyTex3d != 0) GL.glDeleteTextures(1, intArrayOf(dummyTex3d), 0)
+        program = 0; vbo = 0; lutTex = 0; blackTex = 0; lutTex3d = 0; dummyTex3d = 0; lutLoaded = null
     }
 
     // glGetUniformLocation returns -1 for uniforms the compiler optimized out; glUniform* ignores -1.
