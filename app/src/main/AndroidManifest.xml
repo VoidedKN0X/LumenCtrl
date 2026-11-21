@@ -66,6 +66,19 @@
                 <data android:scheme="content" />
                 <data android:mimeType="image/*" />
             </intent-filter>
+            <!-- "Edit in LumenCtrl" from gallery apps: the photo or video is copied into the library and opened in the editor. -->
+            <intent-filter>
+                <action android:name="android.intent.action.EDIT" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="content" />
+                <data android:mimeType="image/*" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.EDIT" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="content" />
+                <data android:mimeType="video/*" />
+            </intent-filter>
         </activity>
 
         <!-- Hands camera captures and shared exports to other apps without exposing storage. -->

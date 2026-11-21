@@ -38,6 +38,7 @@ Part of the [Ctrl series](#the-ctrl-series) by VKNXWorks.
 - **Video:** the same looks on videos, plus trim, mute and speed (0.5×, 1× or 2×); make a reel from several clips
 - **Library:** search, filters, sort, star ratings, pick and reject flags, albums, slideshow and collage
 - **Import** from the Photo Picker, the camera, share and "Open with" from any app, or **straight from a camera over USB** (PTP/MTP), with photos you already have left unselected
+- **Edit in LumenCtrl** from any gallery app: its "Edit" button offers LumenCtrl for photos and videos. LumenCtrl copies the item into its library and opens it in the editor; the gallery's own file is never changed, and your edit is saved through Export as usual
 - **Export:**
   - JPEG, PNG or WebP, quality and size
   - Metadata policy: keep it without location (the default), keep all, or strip all
@@ -70,6 +71,7 @@ If the Obtainium button doesn't open the app, add `https://github.com/VoidedKN0X
 ## Getting started
 
 - **Import:** tap **Import** and pick photos or videos, tap the camera to take one, or share a photo to LumenCtrl from any app. To import from a camera, connect it over USB and tap the USB icon (or accept LumenCtrl's offer when you plug it in).
+- **From your gallery:** in your gallery app, tap **Edit** (or "Edit with") on a photo or video and pick LumenCtrl. It opens straight in the editor; with the app lock on, after you unlock.
 - **Edit:** tap a photo. The bar at the bottom has **Presets**, **Edit** (all the tool groups), **Masks**, **Heal** and **Crop**. Pinch or double-tap to zoom; hold the compare button to see the original.
 - **AI masks:** in **Masks**, tap one of the AI chips (Subject, Sky, People and so on), then use the local sliders.
 - **AI Denoise:** in **Edit > Detail**, tap **Quality** (best) or **Fast**, keep the editor open until it's done, then set **Amount**.

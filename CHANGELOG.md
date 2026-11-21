@@ -8,6 +8,10 @@ To publish a new version: bump `versionCode` and `versionName` in `app/build.gra
 
 Changes on `main` that aren't in a release yet. They ship with the next version.
 
+### New
+
+- **"Edit in LumenCtrl" from your gallery.** Gallery apps now offer LumenCtrl when you tap Edit (or "Edit with") on a photo or video. LumenCtrl copies the item into its library and opens it straight in the editor; with the app lock on, it waits until you unlock. The gallery's own file is never changed: your edit is kept in LumenCtrl and saved to the gallery through Export, as with any other photo. Built and checked by CI only; not yet tried on a phone.
+
 ### Project
 
 - **Checksum list regenerated without the old entries.** `gradle/verification-metadata.xml` was regenerated on CI with the fixed workflow and committed exactly as printed (its SHA-256 matches the log). It now lists only the 345 components the build downloads today; the leftovers from earlier library and build-tool versions are gone.

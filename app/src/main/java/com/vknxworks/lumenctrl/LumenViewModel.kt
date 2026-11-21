@@ -78,11 +78,35 @@ class LumenViewModel(app: Application) : AndroidViewModel(app) {
         if (settings.appLock && !unlocked) pendingShare = pendingShare + uris else this.import(uris)
     }
 
+    /** A photo or video another app asked LumenCtrl to edit while the app lock was showing. */
+    private var pendingEdit: Uri? = null
+
+    /** "Edit in LumenCtrl": imports the item and opens it in the editor, after unlocking when the app lock shows. */
+    fun editWhenUnlocked(uri: Uri) {
+        if (settings.appLock && !unlocked) pendingEdit = uri else importAndOpen(uri)
+    }
+
     fun onUnlocked() {
         unlocked = true
         val waiting = pendingShare
         pendingShare = emptyList()
         this.import(waiting)
+        pendingEdit?.let { pendingEdit = null; importAndOpen(it) }
+    }
+
+    /** Copies one item into the library (the other app's file is never changed) and opens it in the editor. */
+    private fun importAndOpen(uri: Uri) {
+        if (openPhoto != null) close()
+        viewModelScope.launch {
+            busy = tr(R.string.opening_for_editing)
+            val id = catalog.import(listOf(uri)).firstOrNull()
+            val photo = id?.let { withContext(Dispatchers.IO) { catalog.photo(it) } }
+            busy = null
+            refresh()
+            if (photo == null) { message = tr(R.string.cant_open_this_file_for_editing); return@launch }
+            selection = emptySet()
+            open(photo)
+        }
     }
 
     // ---- Library ----

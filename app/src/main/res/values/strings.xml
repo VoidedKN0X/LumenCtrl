@@ -445,4 +445,6 @@
     <string name="strip_all">Strip all</string>
     <string name="no_x_found_in_this_photo">No %1$s found in this photo</string>
     <string name="select_2_to_7_exposures">Select 2 to 7 exposures</string>
+    <string name="opening_for_editing">Opening for editing…</string>
+    <string name="cant_open_this_file_for_editing">Couldn\'t open this file for editing</string>
 </resources>

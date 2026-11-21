@@ -84,6 +84,12 @@ class MainActivity : FragmentActivity() {
             if (vm.screen != Screen.EDITOR) vm.openCameraImport()
             return
         }
+        // "Edit in LumenCtrl" from a gallery app: copy it into the library and open it in the editor.
+        if (intent.action == Intent.ACTION_EDIT) {
+            val uri = intent.data ?: IntentCompat.getParcelableExtra(intent, Intent.EXTRA_STREAM, Uri::class.java)
+            if (uri != null) vm.editWhenUnlocked(uri)
+            return
+        }
         val uris: List<Uri> = when (intent.action) {
             Intent.ACTION_SEND -> listOfNotNull(IntentCompat.getParcelableExtra(intent, Intent.EXTRA_STREAM, Uri::class.java))
             Intent.ACTION_SEND_MULTIPLE -> IntentCompat.getParcelableArrayListExtra(intent, Intent.EXTRA_STREAM, Uri::class.java).orEmpty()
