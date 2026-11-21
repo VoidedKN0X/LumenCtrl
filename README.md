@@ -41,7 +41,7 @@ Part of the [Ctrl series](#the-ctrl-series) by VKNXWorks.
 - **Import** from the Photo Picker, the camera, share and "Open with" from any app, or **straight from a camera over USB** (PTP/MTP), with photos you already have left unselected
 - **Edit in LumenCtrl** from any gallery app: its "Edit" button offers LumenCtrl for photos and videos. LumenCtrl copies the item into its library and opens it in the editor; the gallery's own file is never changed, and your edit is saved through Export as usual
 - **Export:**
-  - JPEG, PNG or WebP, quality and size
+  - JPEG, PNG, WebP, HEIC or AVIF, quality and size. HEIC and AVIF use the phone's own HEVC and AV1 encoders (AVIF only shows on phones that have an AV1 encoder) and are saved without any metadata
   - Metadata policy: keep it without location (the default), keep all, or strip all
   - Optional watermark, and an optional edit record in the file
   - Save to the gallery or share; one photo or a batch

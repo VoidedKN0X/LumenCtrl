@@ -39,11 +39,18 @@ fun ExportSheet(initial: ExportOptions, count: Int, onDismiss: () -> Unit, onExp
     var watermarkOn by remember { mutableStateOf(initial.watermark != null) }
     var watermark by remember { mutableStateOf(initial.watermark ?: "") }
 
+    // AVIF needs an AV1 encoder, which many phones don't have.
+    val avifOk = remember { com.vknxworks.lumenctrl.render.HeifImageWriter.supported(com.vknxworks.lumenctrl.render.HeifImageWriter.Kind.AVIF) }
+    if (!avifOk && o.format == ExportFormat.AVIF) o = o.copy(format = ExportFormat.JPEG)
+    val formats = ExportFormat.entries.filter { it != ExportFormat.AVIF || avifOk }
+
     CtrlSheet(if (count == 1) tr(R.string.export) else tr(R.string.export_x_photos, count), onDismiss) {
         MonoLabel(tr(R.string.format))
-        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            ExportFormat.entries.forEach { f -> CtrlChip(f.label, o.format == f, onClick = { o = o.copy(format = f) }) }
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            items(formats) { f -> CtrlChip(f.label, o.format == f, onClick = { o = o.copy(format = f) }) }
         }
+        if (o.format.heif) MonoLabel(tr(R.string.heif_no_metadata))
+        else if (!avifOk) MonoLabel(tr(R.string.avif_not_on_this_phone))
         if (o.format != ExportFormat.PNG) {
             LabeledSlider(
                 tr(R.string.quality), "${o.quality}", o.quality.toFloat(), 50f..100f, 50f, false,
@@ -54,15 +61,17 @@ fun ExportSheet(initial: ExportOptions, count: Int, onDismiss: () -> Unit, onExp
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             SIZES.forEach { (label, v) -> CtrlChip(label, o.maxDim == v, onClick = { o = o.copy(maxDim = v) }) }
         }
-        MonoLabel(tr(R.string.metadata))
-        LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            items(MetadataMode.entries) { m -> CtrlChip(m.label, o.metadata == m, onClick = { o = o.copy(metadata = m) }) }
+        if (!o.format.heif) {
+            MonoLabel(tr(R.string.metadata))
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                items(MetadataMode.entries) { m -> CtrlChip(m.label, o.metadata == m, onClick = { o = o.copy(metadata = m) }) }
+            }
         }
         CtrlRow(tr(R.string.watermark), tr(R.string.text_in_the_bottom_right_corner)) {
             CtrlToggle(watermarkOn, { watermarkOn = it }, tr(R.string.watermark))
         }
         if (watermarkOn) CtrlTextField(watermark, { watermark = it.take(60) }, tr(R.string.your_name), Modifier.fillMaxWidth())
-        CtrlRow(tr(R.string.embed_edit_record), tr(R.string.stores_the_edit_settings_in_the)) {
+        if (!o.format.heif) CtrlRow(tr(R.string.embed_edit_record), tr(R.string.stores_the_edit_settings_in_the)) {
             CtrlToggle(o.embedEditRecord, { o = o.copy(embedEditRecord = it) }, tr(R.string.embed_edit_record))
         }
         if (com.vknxworks.lumenctrl.render.Hdr.supported && o.format == ExportFormat.JPEG) {

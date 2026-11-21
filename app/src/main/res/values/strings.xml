@@ -473,4 +473,6 @@
     <string name="delete_lut">Delete LUT</string>
     <string name="delete_lut_text">Photos and videos that use it lose that look. The LUT is deleted for good.</string>
     <string name="lut_hint">Import a 3D LUT (.cube file) from a color-grading app or LUT pack to use its look here.</string>
+    <string name="heif_no_metadata">HEIC and AVIF are saved without metadata: no camera details, date, location or edit record</string>
+    <string name="avif_not_on_this_phone">AVIF needs an AV1 encoder, which this phone doesn\'t have</string>
 </resources>

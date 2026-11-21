@@ -27,6 +27,10 @@ import kotlin.math.roundToInt
 
 enum class ExportFormat(val label: String, val ext: String, val mime: String) {
     JPEG("JPEG", "jpg", "image/jpeg"), PNG("PNG", "png", "image/png"), WEBP("WebP", "webp", "image/webp"),
+    HEIC("HEIC", "heic", "image/heic"), AVIF("AVIF", "avif", "image/avif");
+
+    /** HEIC and AVIF are written by [HeifImageWriter], without EXIF (so without any metadata). */
+    val heif: Boolean get() = this == HEIC || this == AVIF
 }
 
 enum class MetadataMode(val label: String) {
@@ -202,11 +206,21 @@ object Exporter {
         options.watermark?.takeIf { it.isNotBlank() }?.let { drawWatermark(context, out, it) }
         outDir.mkdirs()
         val file = File(outDir, "$baseName.${options.format.ext}")
+        if (options.format.heif) {
+            try {
+                HeifImageWriter.write(
+                    out, if (options.format == ExportFormat.AVIF) HeifImageWriter.Kind.AVIF else HeifImageWriter.Kind.HEIC,
+                    options.quality, file,
+                )
+            } finally { out.recycle() }
+            return file
+        }
         file.outputStream().use { stream ->
             val fmt = when (options.format) {
                 ExportFormat.JPEG -> Bitmap.CompressFormat.JPEG
                 ExportFormat.PNG -> Bitmap.CompressFormat.PNG
                 ExportFormat.WEBP -> if (options.quality >= 100) Bitmap.CompressFormat.WEBP_LOSSLESS else Bitmap.CompressFormat.WEBP_LOSSY
+                ExportFormat.HEIC, ExportFormat.AVIF -> error("unreachable")
             }
             out.compress(fmt, options.quality.coerceIn(1, 100), stream)
         }
