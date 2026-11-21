@@ -61,10 +61,12 @@ object HeifImageWriter {
         val h = bitmap.height
         val codec = MediaCodec.createByCodecName(name)
         val caps = codec.codecInfo.getCapabilitiesForType(kind.codecMime)
+        val video = caps.videoCapabilities ?: run { codec.release(); error("${kind.name} encoder has no video capabilities") }
+        val enc = caps.encoderCapabilities ?: run { codec.release(); error("${kind.name} encoder has no encoder capabilities") }
         val alignedW = (w + BLOCK - 1) / BLOCK * BLOCK
         val evenH = (h + 1) / 2 * 2
         // Tiles for anything bigger than one tile, or a size the encoder can't take in one piece.
-        val grid = w > TILE || h > TILE || !caps.videoCapabilities.isSizeSupported(alignedW, evenH)
+        val grid = w > TILE || h > TILE || !video.isSizeSupported(alignedW, evenH)
         val tileW = if (grid) TILE else alignedW
         val tileH = if (grid) TILE else evenH
         val cols = if (grid) (w + TILE - 1) / TILE else 1
@@ -86,7 +88,6 @@ object HeifImageWriter {
             setInteger(MediaFormat.KEY_COLOR_TRANSFER, MediaFormat.COLOR_TRANSFER_SDR_VIDEO)
             setInteger(MediaFormat.KEY_FRAME_RATE, tiles)
             setInteger(MediaFormat.KEY_OPERATING_RATE, if (tiles > 1) 120 else 30)
-            val enc = caps.encoderCapabilities
             val q = quality.coerceIn(1, 100)
             if (enc.isBitrateModeSupported(MediaCodecInfo.EncoderCapabilities.BITRATE_MODE_CQ)) {
                 setInteger(MediaFormat.KEY_BITRATE_MODE, MediaCodecInfo.EncoderCapabilities.BITRATE_MODE_CQ)
@@ -100,7 +101,7 @@ object HeifImageWriter {
                 )
                 // Frame rate = number of tiles, so this is the bits for the whole picture.
                 val bits = (w.toDouble() * h * 1.5 * 8 * MAX_COMPRESS_RATIO * q / 100.0).toInt()
-                setInteger(MediaFormat.KEY_BIT_RATE, caps.videoCapabilities.bitrateRange.clamp(bits))
+                setInteger(MediaFormat.KEY_BIT_RATE, video.bitrateRange.clamp(bits))
             }
         }
 
