@@ -105,8 +105,6 @@ class MainActivity : ComponentActivity() {
         handleShareIntent(intent)
     }
 
-    override fun onStart() { super.onStart(); vm.onAppStart() }
-    override fun onStop() { super.onStop(); if (!isChangingConfigurations) vm.onAppStop() }
 
     /** "Share to LumenCtrl" / "Open with": imports the images into the private library. */
     private fun handleShareIntent(intent: Intent?) {
