@@ -100,6 +100,32 @@ fun SettingsScreen(vm: LumenViewModel) {
         val importLib = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
             if (uri != null) vm.inspectLibrary(uri)
         }
+        val exportSet = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
+            if (uri != null) vm.exportSettings(uri)
+        }
+        val importSet = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+            if (uri != null) vm.inspectSettings(uri)
+        }
+        Section(tr(R.string.settings_file)) {
+            CtrlRow(tr(R.string.export_settings), tr(R.string.export_settings_subtitle)) {
+                CtrlButton(tr(R.string.export), onClick = { exportSet.launch("LumenCtrl-settings.json") })
+            }
+            Divider()
+            CtrlRow(tr(R.string.import_settings), tr(R.string.import_settings_subtitle)) {
+                CtrlButton(tr(R.string.import_), onClick = { importSet.launch(arrayOf("application/json", "text/plain", "application/octet-stream")) })
+            }
+        }
+        vm.pendingSettings?.let { incoming ->
+            val changes = s.changesFrom(incoming, { ACCENTS.getOrNull(it)?.name ?: "?" }, { if (it) tr(R.string.on) else tr(R.string.off) })
+            ConfirmDialog(
+                tr(R.string.import_settings_q),
+                tr(R.string.import_settings_replaces) + "\n\n" + changes.joinToString("\n") { "${it.label}: ${it.from} → ${it.to}" },
+                tr(R.string.import_),
+                onConfirm = vm::applyPendingSettings,
+                onDismiss = vm::cancelPendingSettings,
+            )
+        }
+
         Section(tr(R.string.library_backup)) {
             CtrlRow(tr(R.string.export_library), tr(R.string.export_library_subtitle)) {
                 CtrlButton(tr(R.string.export), onClick = {

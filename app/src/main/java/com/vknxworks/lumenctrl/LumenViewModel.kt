@@ -368,6 +368,50 @@ class LumenViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    // ---- Settings file ----
+
+    /** A settings file that was read; the UI lists [Settings.changesFrom] and asks before applying it. */
+    var pendingSettings by mutableStateOf<Settings.Incoming?>(null); private set
+
+    fun exportSettings(uri: Uri) {
+        val app = getApplication<Application>()
+        val json = settings.toFileJson()
+        viewModelScope.launch {
+            runCatching {
+                withContext(Dispatchers.IO) {
+                    app.contentResolver.openOutputStream(uri, "wt")!!.use { it.write(json.toByteArray()) }
+                }
+            }.onSuccess { message = tr(R.string.settings_exported) }
+                .onFailure { message = tr(R.string.settings_export_failed_x, it.message) }
+        }
+    }
+
+    fun inspectSettings(uri: Uri) {
+        val app = getApplication<Application>()
+        viewModelScope.launch {
+            runCatching {
+                withContext(Dispatchers.IO) {
+                    val text = app.contentResolver.openInputStream(uri)!!.use { input ->
+                        val bytes = input.readNBytes(256 * 1024)
+                        String(bytes, Charsets.UTF_8)
+                    }
+                    Settings.parseFile(text, com.vknxworks.lumenctrl.ui.ctrl.ACCENTS.size)
+                }
+            }.onSuccess { incoming ->
+                if (incoming == Settings.Incoming(settings.hideInScreenshots, settings.hideInRecents, settings.accent, settings.export)) {
+                    message = tr(R.string.settings_already_the_same)
+                } else pendingSettings = incoming
+            }.onFailure { message = tr(R.string.not_a_lumenctrl_settings_file) }
+        }
+    }
+
+    fun applyPendingSettings() {
+        pendingSettings?.let { settings.apply(it); message = tr(R.string.settings_imported) }
+        pendingSettings = null
+    }
+
+    fun cancelPendingSettings() { pendingSettings = null }
+
     // ---- Library export and import ----
     private val archive = com.vknxworks.lumenctrl.data.LibraryArchive(app)
 

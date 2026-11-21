@@ -545,4 +545,18 @@
     <string name="importing_library_x_files">Importing library · %1$d files</string>
     <string name="library_imported_x_x_x_x">Imported %1$d photos and videos, %2$d albums, %3$d presets and %4$d LUTs</string>
     <string name="library_import_failed_x">Library import failed, nothing was added: %1$s</string>
+    <!-- Settings file -->
+    <string name="settings_file">Settings file</string>
+    <string name="export_settings">Export settings</string>
+    <string name="export_settings_subtitle">Privacy switches, accent color and export defaults, in a small file. Never the app lock or its PIN.</string>
+    <string name="import_settings">Import settings</string>
+    <string name="import_settings_subtitle">Shows what would change before anything does. The app lock stays as it is.</string>
+    <string name="import_settings_q">Import these settings?</string>
+    <string name="import_settings_replaces">These settings will be replaced:</string>
+    <string name="accent_color">Accent color</string>
+    <string name="settings_exported">Settings exported</string>
+    <string name="settings_export_failed_x">Couldn\'t export the settings: %1$s</string>
+    <string name="settings_imported">Settings imported</string>
+    <string name="settings_already_the_same">Your settings are already the same as in that file</string>
+    <string name="not_a_lumenctrl_settings_file">That isn\'t a LumenCtrl settings file</string>
 </resources>

@@ -48,6 +48,7 @@ Part of the [Ctrl series](#the-ctrl-series) by VKNXWorks.
   - Optional watermark, and an optional edit record in the file
   - Save to the gallery or share; one photo or a batch
 - **Library export and import:** your whole library (originals, edits, versions, ratings, flags, albums, AI masks, denoised copies, removals, music, your presets and LUTs) in one ZIP file, to move to a new phone or keep as a backup; importing adds only what's missing and never replaces or deletes anything
+- **Settings export and import:** your privacy switches, accent and export defaults in a small file; importing shows every setting it would change first, and never touches the app lock
 - **App lock** with fingerprint, face or your screen lock, and **Hide in screenshots** / **Hide in recent apps** (all off until you turn them on)
 - **Ctrl / Signal look**, shared by every Ctrl app: dark and light, high contrast, four accent colors, Space Grotesk and JetBrains Mono
 
