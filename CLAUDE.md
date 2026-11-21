@@ -13,7 +13,9 @@ Photo and video editor in the VKNXWorks Ctrl series. Kotlin, Jetpack Compose, Ma
 
 To add a slider: add a `Param`, use `P_<key>` in `Shaders.FRAGMENT`. UI, persistence, presets, undo and export pick it up.
 
-Text the user sees lives in `res/values/strings.xml` and is read with `tr(R.string.key, args…)` (`AppStrings.kt`), which works in screens, the view model and the model enums alike (a new `Param` takes its label and section from there too). `MainActivity.onCreate` calls `AppStrings.init` before anything else. Still in the code on purpose: preset names (they are saved in edit sidecars), number and unit formats (`%+.2f EV`, `ISO 100`), file and folder names, the brand marks "Lumen" and "CTRL", and internal error texts.
+Text the user sees lives in `res/values/strings.xml` (English) and `res/values-nl/strings.xml` (Dutch, informal "je"; Android picks it from the phone's language, there is no in-app picker) and is read with `tr(R.string.key, args…)` (`AppStrings.kt`), which works in screens, the view model and the model enums alike (a new `Param` takes its label and section from there too). `MainActivity.onCreate` calls `AppStrings.init` before anything else. Every new string needs its Dutch line too. Built-in preset names are stored in English in edit sidecars (`Preset.name`); what's shown is `Preset.label` from resources. Still in the code on purpose: number and unit formats (`%+.2f EV`, `ISO 100`), file and folder names, the brand marks "Lumen" and "CTRL", and internal error texts.
+
+Newer parts: `model/CubeLut.kt` + `data/Luts.kt` (imported 3D LUTs, sampled on texture unit 5), `data/UserPresets.kt`, `model/Overlay.kt` + `render/OverlayPainter.kt` (text and drawing layers), `edit/Inpaint.kt` + `edit/Removals.kt` (object removal patches `<id>.rm-<rid>.png`, applied to every decoded source), `render/HeifImageWriter.kt` (HEIC/AVIF), `render/AudioMix.kt` (video music, `<id>.music-<mid>`), `data/LibraryArchive.kt` (library ZIP), `data/lock/LockVault.kt` + `ui/lock/` (the series' PIN lock, copied from SumCtrl; the view model is the `LockHost`).
 
 ## Hard rules
 

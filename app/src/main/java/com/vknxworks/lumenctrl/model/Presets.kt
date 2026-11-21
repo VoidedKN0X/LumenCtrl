@@ -3,6 +3,9 @@ package com.vknxworks.lumenctrl.model
 import com.vknxworks.lumenctrl.model.Param.*
 
 data class Preset(val name: String, val values: Map<Param, Float>) {
+    /** The name as shown, in the phone's language. [name] itself is what edits store, so it never changes. */
+    val label: String get() = LABELS[name]?.let { com.vknxworks.lumenctrl.tr(it) } ?: name
+
     /**
      * Replace global adjustments with this look at [amount] (0..2, 1 = as designed),
      * like Lightroom's preset amount slider. Framing, masks and spots are kept.
@@ -95,3 +98,18 @@ object Presets {
 
     fun byName(name: String?) = all.firstOrNull { it.name == name }
 }
+
+private val LABELS = mapOf(
+    "Original" to com.vknxworks.lumenctrl.R.string.preset_original,
+    "Clean" to com.vknxworks.lumenctrl.R.string.preset_clean,
+    "Vivid" to com.vknxworks.lumenctrl.R.string.preset_vivid,
+    "Matte" to com.vknxworks.lumenctrl.R.string.preset_matte,
+    "Warm film" to com.vknxworks.lumenctrl.R.string.preset_warm_film,
+    "Teal & amber" to com.vknxworks.lumenctrl.R.string.preset_teal_amber,
+    "Cool fade" to com.vknxworks.lumenctrl.R.string.preset_cool_fade,
+    "Moody" to com.vknxworks.lumenctrl.R.string.preset_moody,
+    "Dreamy" to com.vknxworks.lumenctrl.R.string.preset_dreamy,
+    "Portrait" to com.vknxworks.lumenctrl.R.string.preset_portrait,
+    "B&W" to com.vknxworks.lumenctrl.R.string.preset_bw,
+    "B&W soft" to com.vknxworks.lumenctrl.R.string.preset_bw_soft,
+)

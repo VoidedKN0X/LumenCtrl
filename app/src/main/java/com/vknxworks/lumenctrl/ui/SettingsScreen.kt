@@ -138,7 +138,10 @@ fun SettingsScreen(vm: LumenViewModel) {
         }
 
         Section(tr(R.string.storage)) {
-            CtrlRow(tr(R.string.library), "${vm.allPhotos.size} photos · ${"%.1f".format(storage / 1e6)} MB in private app storage")
+            CtrlRow(
+                tr(R.string.library),
+                androidx.compose.ui.res.pluralStringResource(R.plurals.x_photos_x_mb_private, vm.allPhotos.size, vm.allPhotos.size, "%.1f".format(storage / 1e6)),
+            )
             Divider()
             CtrlRow(tr(R.string.exports), tr(R.string.pictures_lumen_location_removed_by_default))
         }

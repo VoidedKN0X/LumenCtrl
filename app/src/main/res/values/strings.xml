@@ -284,8 +284,6 @@
     <string name="close_settings">Close settings</string>
     <string name="privacy">Privacy</string>
     <string name="app_lock">App lock</string>
-    <string name="fingerprint_face_or_screen_lock_on">Fingerprint, face or screen lock on open</string>
-    <string name="set_a_screen_lock_in_android">Set a screen lock in Android settings first</string>
     <string name="hide_in_screenshots">Hide in screenshots</string>
     <string name="blocks_screenshots_and_screen_recording">Blocks screenshots and screen recording</string>
     <string name="hide_in_recent_apps">Hide in recent apps</string>
@@ -560,7 +558,7 @@
     <string name="settings_already_the_same">Your settings are already the same as in that file</string>
     <string name="not_a_lumenctrl_settings_file">That isn\'t a LumenCtrl settings file</string>
     <!-- App lock: the shared Ctrl series PIN lock -->
-    <string name="label_lock_brand">VKNXWorks · Ctrl</string>
+    <string name="label_lock_brand" translatable="false">VKNXWorks · Ctrl</string>
     <string name="lock_change_intro">At least %1$d digits, different from your phone\'s PIN.</string>
     <string name="lock_change_pin">Change app PIN</string>
     <string name="lock_choose_pin">Choose an app PIN</string>
@@ -610,4 +608,23 @@
     <string name="lock_upgrade_intro">Like every Ctrl app, LumenCtrl now locks with its own PIN instead of the phone\'s screen lock. Choose one of at least %1$d digits to keep the lock on, or cancel to turn it off.</string>
     <string name="lock_upgrade_unlock">Unlock with your screen lock to continue</string>
     <string name="lock_turned_off_no_pin">The app lock is off. Turn it on again in Settings with an app PIN.</string>
+    <!-- Built-in preset names as shown (the edits store the English names) -->
+    <string name="preset_original">Original</string>
+    <string name="preset_clean">Clean</string>
+    <string name="preset_vivid">Vivid</string>
+    <string name="preset_matte">Matte</string>
+    <string name="preset_warm_film">Warm film</string>
+    <string name="preset_teal_amber">Teal &amp; amber</string>
+    <string name="preset_cool_fade">Cool fade</string>
+    <string name="preset_moody">Moody</string>
+    <string name="preset_dreamy">Dreamy</string>
+    <string name="preset_portrait">Portrait</string>
+    <string name="preset_bw">B&amp;W</string>
+    <string name="preset_bw_soft">B&amp;W soft</string>
+    <string name="x_model_on_device_keep_editor_open">%1$s model · on device · keep the editor open</string>
+    <string name="ultra_hdr_source_up_to_x">Ultra HDR source · up to %1$s×</string>
+    <plurals name="x_photos_x_mb_private">
+        <item quantity="one">%1$d photo · %2$s MB in private app storage</item>
+        <item quantity="other">%1$d photos · %2$s MB in private app storage</item>
+    </plurals>
 </resources>

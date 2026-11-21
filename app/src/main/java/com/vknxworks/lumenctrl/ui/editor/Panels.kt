@@ -125,7 +125,7 @@ fun PresetPanel(vm: LumenViewModel) {
         Column(Modifier.padding(start = 20.dp, end = 20.dp, bottom = 12.dp)) {
             if (builtIn != null && builtIn.values.isNotEmpty()) {
                 LabeledSlider(
-                    label = tr(R.string.x_amount, builtIn.name), valueText = "${(vm.params.presetAmount * 100).toInt()}",
+                    label = tr(R.string.x_amount, builtIn.label), valueText = "${(vm.params.presetAmount * 100).toInt()}",
                     value = vm.params.presetAmount, range = 0f..2f, origin = 0f, changed = vm.params.presetAmount != 1f,
                     onChange = { vm.setLiveParams(builtIn.applyTo(vm.params, it), tr(R.string.preset_amount)) },
                     onDone = vm::commit, onReset = { vm.edit(tr(R.string.preset_amount)) { builtIn.applyTo(it, 1f) } },
@@ -146,7 +146,7 @@ fun PresetPanel(vm: LumenViewModel) {
             ) {
                 Presets.all.forEach { preset ->
                     val selected = vm.params.preset == preset.name || (preset.values.isEmpty() && vm.params.preset == null && vm.params.values.isEmpty())
-                    CtrlChip(preset.name, selected, onClick = { vm.edit(tr(R.string.preset_x, preset.name)) { preset.applyTo(it) } })
+                    CtrlChip(preset.label, selected, onClick = { vm.edit(tr(R.string.preset_x, preset.label)) { preset.applyTo(it) } })
                 }
             }
             MonoLabel(tr(R.string.your_presets), Modifier.padding(start = 4.dp, top = 14.dp, bottom = 6.dp))
@@ -328,7 +328,7 @@ private fun DenoiseTools(vm: LumenViewModel) {
                 MonoLabel("${(progress * 100).toInt()}%")
                 CtrlButton(tr(R.string.cancel), onClick = vm::cancelDenoise)
             }
-            MonoLabel("${vm.denoiseModel?.label ?: ""} model · on device · keep the editor open")
+            MonoLabel(tr(R.string.x_model_on_device_keep_editor_open, vm.denoiseModel?.label ?: ""))
         } else {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 CtrlButton(
@@ -367,7 +367,7 @@ private fun HdrTools(vm: LumenViewModel, st: EditorState) {
             if (on) CtrlChip(tr(R.string.visualize), st.vizHdr, onClick = { st.vizHdr = !st.vizHdr })
             if (on && supported) CtrlChip(tr(R.string.hdr_view), st.hdrView, onClick = { st.hdrView = !st.hdrView })
         }
-        val source = vm.sourceGain?.let { "Ultra HDR source · up to %.1f×".format(it.fullRatio) }
+        val source = vm.sourceGain?.let { tr(R.string.ultra_hdr_source_up_to_x, "%.1f".format(it.fullRatio)) }
         val screen = if (com.vknxworks.lumenctrl.render.Hdr.screenSupportsHdr(context)) tr(R.string.hdr_screen) else tr(R.string.sdr_screen)
         val note = when {
             !supported -> tr(R.string.hdr_export_needs_android_14)
