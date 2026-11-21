@@ -18,8 +18,9 @@
     -->
     <uses-permission android:name="android.permission.INTERNET" tools:node="remove" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" tools:node="remove" />
-    <!-- The app lock uses USE_BIOMETRIC. The biometric library also adds the old USE_FINGERPRINT, which only
-         Android 8 and older use (LumenCtrl needs Android 15). -->
+    <!-- The app lock's optional fingerprint unlock (Android's own BiometricPrompt, strong biometrics only).
+         The old USE_FINGERPRINT is only for Android 8 and older (LumenCtrl needs Android 15). -->
+    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
     <uses-permission android:name="android.permission.USE_FINGERPRINT" tools:node="remove" />
 
     <application

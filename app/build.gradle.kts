@@ -110,8 +110,6 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.10.0")
     implementation("androidx.core:core-ktx:1.18.0")
     implementation("androidx.exifinterface:exifinterface:1.4.1")
-    // App lock. Runs entirely on-device through Android's BiometricPrompt.
-    implementation("androidx.biometric:biometric:1.1.0")
     // On-device inference for AI masks and AI Denoise: LiteRT (TensorFlow Lite's successor),
     // standalone, no Play Services, no network, built for 16 KB memory pages.
     implementation("com.google.ai.edge.litert:litert:1.4.0")

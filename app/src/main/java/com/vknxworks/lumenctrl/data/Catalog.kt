@@ -349,6 +349,9 @@ class Catalog(private val context: Context) {
         }
     }
 
+    /** Forgets the remembered photo facts (after the library was deleted). */
+    fun forgetCachedMeta() = synchronized(metaLock) { metaCache.clear() }
+
     // ---- Object removal patches (<id>.rm-<removalId>.png, see edit/Removals) ----
 
     private fun removalFiles(photoId: String) = dir.listFiles { f -> f.name.startsWith("$photoId.rm-") && f.name.endsWith(".png") }.orEmpty().toList()

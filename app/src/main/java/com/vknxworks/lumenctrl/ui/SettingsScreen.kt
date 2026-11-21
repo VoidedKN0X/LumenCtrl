@@ -6,7 +6,18 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import com.vknxworks.lumenctrl.ui.ctrl.CtrlButton
-import androidx.biometric.BiometricManager
+import com.vknxworks.lumenctrl.ui.ctrl.CtrlMenu
+import com.vknxworks.lumenctrl.ui.ctrl.CtrlMenuItem
+import com.vknxworks.lumenctrl.ui.lock.AppLock
+import com.vknxworks.lumenctrl.ui.lock.PinRequest
+import com.vknxworks.lumenctrl.ui.lock.findActivity
+import com.vknxworks.lumenctrl.data.lock.LockVault
+import com.vknxworks.lumenctrl.data.LockTimeout
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -52,7 +63,8 @@ fun SettingsScreen(vm: LumenViewModel) {
     val s = vm.settings
     val context = LocalContext.current
     BackHandler { vm.backToLibrary() }
-    val canLock = BiometricManager.from(context).canAuthenticate(LOCK_AUTHENTICATORS) == BiometricManager.BIOMETRIC_SUCCESS
+    val bioAvailable = remember { com.vknxworks.lumenctrl.ui.lock.AppLock.biometricAvailable(context) }
+    var timeoutMenu by remember { mutableStateOf(false) }
     val storage by produceState(0L) { value = vm.storageBytes() }
 
     Column(
@@ -69,8 +81,45 @@ fun SettingsScreen(vm: LumenViewModel) {
         }
 
         Section(tr(R.string.privacy)) {
-            CtrlRow(tr(R.string.app_lock), if (canLock) tr(R.string.fingerprint_face_or_screen_lock_on) else tr(R.string.set_a_screen_lock_in_android)) {
-                CtrlToggle(s.appLock, { if (canLock || !it) s.updateAppLock(it) }, tr(R.string.app_lock))
+            // The shared Ctrl series app lock: an app PIN, optionally the fingerprint.
+            val vault = vm.vault
+            val lockOn = vault.enabled
+            CtrlRow(tr(R.string.app_lock), tr(R.string.app_lock_pin_subtitle)) {
+                CtrlToggle(lockOn, { on -> AppLock.request = if (on) PinRequest.ENABLE else PinRequest.DISABLE }, tr(R.string.app_lock))
+            }
+            if (lockOn) {
+                Divider()
+                CtrlRow(
+                    tr(R.string.lock_change_pin), tr(R.string.lock_change_pin_subtitle, LockVault.PIN_MIN),
+                    Modifier.clickable(role = Role.Button) { AppLock.request = PinRequest.CHANGE },
+                )
+                Divider()
+                CtrlRow(
+                    tr(R.string.lock_fingerprint),
+                    if (bioAvailable || vault.biometricEnabled) tr(R.string.lock_fingerprint_subtitle) else tr(R.string.lock_fingerprint_unavailable),
+                ) {
+                    CtrlToggle(vault.biometricEnabled, { on ->
+                        if (!on) vault.disableBiometric()
+                        else if (bioAvailable) {
+                            val activity = context.findActivity()
+                            val cipher = vault.biometricEnrolCipher()
+                            if (activity == null || cipher == null) vm.toast(tr(R.string.lock_fingerprint_setup_failed))
+                            else AppLock.biometricPrompt(
+                                activity, tr(R.string.lock_fingerprint_enable_title), tr(R.string.lock_fingerprint_enable_subtitle), cipher,
+                                onError = { err -> if (err != null) vm.toast(err) },
+                            ) { unlocked -> if (!vault.finishBiometricEnrol(unlocked)) vm.toast(tr(R.string.lock_fingerprint_setup_failed)) }
+                        }
+                    }, tr(R.string.lock_fingerprint))
+                }
+                Divider()
+                Box {
+                    CtrlRow(tr(R.string.lock_again), tr(s.lockTimeout.label), Modifier.clickable(role = Role.Button) { timeoutMenu = true })
+                    CtrlMenu(timeoutMenu, { timeoutMenu = false }) {
+                        LockTimeout.entries.forEach { t ->
+                            CtrlMenuItem(tr(t.label) + if (t == s.lockTimeout) "  ✓" else "") { s.updateLockTimeout(t); timeoutMenu = false }
+                        }
+                    }
+                }
             }
             Divider()
             CtrlRow(tr(R.string.hide_in_screenshots), tr(R.string.blocks_screenshots_and_screen_recording)) {
@@ -181,9 +230,6 @@ fun SettingsScreen(vm: LumenViewModel) {
     }
 }
 
-// Strong (Class 3) biometrics only, like the other Ctrl apps. A phone whose only biometric is a
-// weaker one (most camera-only face unlock) falls back to the screen lock.
-const val LOCK_AUTHENTICATORS = BiometricManager.Authenticators.BIOMETRIC_STRONG or BiometricManager.Authenticators.DEVICE_CREDENTIAL
 
 @Composable
 private fun Section(title: String, content: @Composable () -> Unit) {

@@ -9,11 +9,29 @@ import com.vknxworks.lumenctrl.render.ExportFormat
 import com.vknxworks.lumenctrl.render.ExportOptions
 import com.vknxworks.lumenctrl.render.MetadataMode
 
+/** "Lock again": how long you can be away before the app lock asks again (the series' choices). */
+enum class LockTimeout(val label: Int, val millis: Long) {
+    IMMEDIATELY(com.vknxworks.lumenctrl.R.string.lock_again_immediately, 0L),
+    MINUTE_1(com.vknxworks.lumenctrl.R.string.lock_again_1m, 60_000L),
+    MINUTES_5(com.vknxworks.lumenctrl.R.string.lock_again_5m, 5 * 60_000L),
+    MINUTES_15(com.vknxworks.lumenctrl.R.string.lock_again_15m, 15 * 60_000L),
+    HOUR_1(com.vknxworks.lumenctrl.R.string.lock_again_1h, 60 * 60_000L),
+    RESTART(com.vknxworks.lumenctrl.R.string.lock_again_restart, -1L),
+}
+
 /** App preferences, kept in private SharedPreferences and exposed as Compose state. */
 class Settings(context: Context) {
     private val prefs = context.getSharedPreferences("lumen", Context.MODE_PRIVATE)
 
+    /**
+     * The old app lock (the phone's screen lock, before LumenCtrl had its own PIN). Only read to move people who had
+     * it on to the PIN lock; the PIN lock itself lives in data/lock/LockVault.
+     */
     var appLock by mutableStateOf(prefs.getBoolean("appLock", false)); private set
+    /** Lock again after this long away; 1 minute, as LumenCtrl always did, until you choose. */
+    var lockTimeout by mutableStateOf(
+        runCatching { LockTimeout.valueOf(prefs.getString("lockTimeout", LockTimeout.MINUTE_1.name)!!) }.getOrDefault(LockTimeout.MINUTE_1),
+    ); private set
     var hideInScreenshots by mutableStateOf(prefs.getBoolean("hideShots", false)); private set
     var hideInRecents by mutableStateOf(prefs.getBoolean("hideRecents", false)); private set
     var accent by mutableIntStateOf(prefs.getInt("accent", 0)); private set
@@ -23,6 +41,15 @@ class Settings(context: Context) {
     fun updateHideInScreenshots(v: Boolean) { hideInScreenshots = v; prefs.edit().putBoolean("hideShots", v).apply() }
     fun updateHideInRecents(v: Boolean) { hideInRecents = v; prefs.edit().putBoolean("hideRecents", v).apply() }
     fun updateAccent(i: Int) { accent = i; prefs.edit().putInt("accent", i).apply() }
+    fun updateLockTimeout(t: LockTimeout) { lockTimeout = t; prefs.edit().putString("lockTimeout", t.name).apply() }
+
+    /** Back to the defaults ("Forgot PIN?"). */
+    fun resetAll() {
+        prefs.edit().clear().commit()
+        appLock = false; hideInScreenshots = false; hideInRecents = false; accent = 0
+        lockTimeout = LockTimeout.MINUTE_1
+        export = loadExport()
+    }
 
     fun updateExport(o: ExportOptions) {
         export = o

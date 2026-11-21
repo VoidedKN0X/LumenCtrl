@@ -39,6 +39,7 @@ import com.vknxworks.lumenctrl.model.Spot
 import com.vknxworks.lumenctrl.render.ExportOptions
 import com.vknxworks.lumenctrl.render.Exporter
 import com.vknxworks.lumenctrl.render.Histogram
+import com.vknxworks.lumenctrl.ui.lock.AppLock
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -56,19 +57,79 @@ enum class LibFilter(val label: String) {
 
 enum class SortOrder(val label: String) { NEWEST(tr(R.string.newest)), OLDEST(tr(R.string.oldest)), IMPORTED(tr(R.string.recently_added)) }
 
-class LumenViewModel(app: Application) : AndroidViewModel(app) {
+class LumenViewModel(app: Application) : AndroidViewModel(app), com.vknxworks.lumenctrl.ui.lock.LockHost {
     private val catalog = Catalog(app)
     val settings = Settings(app)
 
     var screen by mutableStateOf(Screen.LIBRARY)
 
-    // ---- App lock ----
-    var unlocked by mutableStateOf(!settings.appLock)
-    private var stoppedAt = 0L
-    fun onAppStop() { stoppedAt = System.currentTimeMillis() }
-    fun onAppStart() {
-        // Short grace period so the photo picker, camera and share sheet don't re-lock the app.
-        if (settings.appLock && stoppedAt > 0 && System.currentTimeMillis() - stoppedAt > 60_000) unlocked = false
+    // ---- App lock (the shared Ctrl series PIN lock, see ui/lock/AppLock) ----
+    override val vault = com.vknxworks.lumenctrl.data.lock.LockVault(app, "lumenctrl")
+
+    /**
+     * The old lock (the phone's screen lock) was on and no PIN is set yet: the app asks for the screen lock once
+     * more and then for a new app PIN (or turns the lock off when you cancel).
+     */
+    var legacyLock by mutableStateOf(settings.appLock && !vault.enabled); private set
+    var legacyUnlocked by mutableStateOf(false); private set
+
+    /** Something of the app is behind a lock screen right now. */
+    val lockShowing: Boolean get() = (vault.enabled && !AppLock.unlocked) || (legacyLock && !legacyUnlocked)
+
+    /** The old lock was unlocked: now choose an app PIN. */
+    fun onLegacyUnlocked() {
+        legacyUnlocked = true
+        AppLock.markUnlocked()
+        AppLock.request = com.vknxworks.lumenctrl.ui.lock.PinRequest.UPGRADE
+        processPending()
+    }
+
+    /** "Cancel" on choosing the new PIN: the old lock is turned off. */
+    override fun cancelUpgrade() {
+        settings.updateAppLock(false)
+        legacyLock = false
+        message = tr(R.string.lock_turned_off_no_pin)
+    }
+
+    override suspend fun enableLock(pin: String) {
+        // Unlocked first, so the lock screen doesn't flash up while the PIN is being saved.
+        AppLock.markUnlocked()
+        withContext(Dispatchers.Default) { vault.setUp(pin) }
+        settings.updateAppLock(false)
+        legacyLock = false
+    }
+
+    override fun disableLock() { vault.disable() }
+
+    /**
+     * "Forgot PIN?": the PIN can't be recovered, and skipping it would make the lock pointless, so everything the
+     * lock protects is deleted (the library, presets and LUTs), the settings are reset and the lock is turned off.
+     * Exports already saved to Pictures/Lumen and Movies/Lumen are not touched.
+     */
+    override suspend fun forgetEverything() {
+        if (openPhoto != null) { openPhoto = null; preview = null; basePreview = null; baseDenoised = null; denoised = null; screen = Screen.LIBRARY }
+        pendingShare = emptyList(); pendingEdit = null
+        val app = getApplication<Application>()
+        withContext(Dispatchers.IO) {
+            File(app.filesDir, "library").listFiles()?.forEach { it.deleteRecursively() }
+            File(app.filesDir, "presets.json").delete()
+            File(app.filesDir, "luts").listFiles()?.forEach { it.deleteRecursively() }
+            File(app.filesDir, "import-staging").deleteRecursively()
+            app.cacheDir.listFiles()?.forEach { it.deleteRecursively() }
+        }
+        catalog.forgetCachedMeta()
+        settings.resetAll()
+        vault.disable()
+        legacyLock = false
+        AppLock.markUnlocked()
+        selection = emptySet()
+        refresh()
+        loadLooks()
+    }
+
+    override fun onUnlocked() {
+        AppLock.markUnlocked()
+        processPending()
     }
 
     /** Images shared in while the app lock was showing; they are imported once it's unlocked. */
@@ -76,7 +137,7 @@ class LumenViewModel(app: Application) : AndroidViewModel(app) {
 
     /** Imports shared images, or keeps them until the app lock is unlocked. */
     fun importWhenUnlocked(uris: List<Uri>) {
-        if (settings.appLock && !unlocked) pendingShare = pendingShare + uris else this.import(uris)
+        if (lockShowing) pendingShare = pendingShare + uris else this.import(uris)
     }
 
     /** A photo or video another app asked LumenCtrl to edit while the app lock was showing. */
@@ -84,11 +145,10 @@ class LumenViewModel(app: Application) : AndroidViewModel(app) {
 
     /** "Edit in LumenCtrl": imports the item and opens it in the editor, after unlocking when the app lock shows. */
     fun editWhenUnlocked(uri: Uri) {
-        if (settings.appLock && !unlocked) pendingEdit = uri else importAndOpen(uri)
+        if (lockShowing) pendingEdit = uri else importAndOpen(uri)
     }
 
-    fun onUnlocked() {
-        unlocked = true
+    private fun processPending() {
         val waiting = pendingShare
         pendingShare = emptyList()
         this.import(waiting)
@@ -548,6 +608,8 @@ class LumenViewModel(app: Application) : AndroidViewModel(app) {
     private val redoStack = ArrayDeque<Step>()
 
     init {
+        // Locking wipes the vault key from memory.
+        AppLock.onLocked = { vault.close() }
         com.vknxworks.lumenctrl.render.OverlayPainter.init(app)
         refresh(); loadLooks()
     }

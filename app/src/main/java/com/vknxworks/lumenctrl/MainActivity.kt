@@ -8,7 +8,6 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
-import androidx.biometric.BiometricPrompt
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -31,11 +30,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat
 import androidx.core.content.IntentCompat
-import androidx.fragment.app.FragmentActivity
+import androidx.activity.ComponentActivity
+import androidx.compose.runtime.CompositionLocalProvider
+import com.vknxworks.lumenctrl.ui.lock.AppLock
+import com.vknxworks.lumenctrl.ui.lock.AppLockGate
+import com.vknxworks.lumenctrl.ui.lock.GuardWindow
+import com.vknxworks.lumenctrl.ui.lock.LocalLockHost
+import com.vknxworks.lumenctrl.ui.lock.lockCovering
 import com.vknxworks.lumenctrl.ui.CollageScreen
-import com.vknxworks.lumenctrl.ui.LOCK_AUTHENTICATORS
 import com.vknxworks.lumenctrl.ui.LibraryScreen
 import com.vknxworks.lumenctrl.ui.SettingsScreen
 import com.vknxworks.lumenctrl.ui.SlideshowScreen
@@ -49,8 +52,7 @@ import com.vknxworks.lumenctrl.ui.ctrl.MonoLabel
 import com.vknxworks.lumenctrl.ui.ctrl.Wordmark
 import com.vknxworks.lumenctrl.ui.editor.EditorScreen
 
-/** FragmentActivity (a ComponentActivity) because BiometricPrompt needs one. */
-class MainActivity : FragmentActivity() {
+class MainActivity : ComponentActivity() {
     private val vm: LumenViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -58,14 +60,44 @@ class MainActivity : FragmentActivity() {
         AppStrings.init(this)
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        applyPrivacyFlags()
         if (savedInstanceState == null) handleShareIntent(intent)
         setContent {
             CtrlTheme(vm.settings.accent) {
-                LaunchedEffect(vm.settings.hideInScreenshots, vm.settings.hideInRecents) { applyPrivacyFlags() }
-                LumenApp(vm, onUnlock = ::authenticate)
+                val s = vm.settings
+                val legacyShowing = vm.legacyLock && !vm.legacyUnlocked
+                // "Hide in screenshots": always on while a lock or PIN screen shows.
+                val secure = s.hideInScreenshots || lockCovering(vm.vault) || legacyShowing
+                // "Hide in recent apps": always with the app lock on, so Recents never shows what's behind it.
+                val blankRecents = s.hideInRecents || vm.vault.enabled || vm.legacyLock
+                // No overlays over the lock and PIN screens, and their content hidden from accessibility misuse.
+                GuardWindow(lockCovering(vm.vault) || legacyShowing, sensitive = true)
+                LaunchedEffect(secure, blankRecents) { applyPrivacyFlags(secure, blankRecents) }
+                CompositionLocalProvider(LocalLockHost provides vm) {
+                    if (legacyShowing) LegacyLockScreen(onUnlock = ::legacyUnlock)
+                    // Nothing of the app is shown while the app lock is locked.
+                    else AppLockGate { LumenApp(vm) }
+                }
             }
         }
+    }
+
+    // The app lock counts time away from the app; trips LumenCtrl itself starts (pickers, camera, share sheet)
+    // don't count as leaving (see AppLock.expectReturn).
+    override fun onStart() {
+        super.onStart()
+        AppLock.onForeground(vm.vault.enabled, vm.settings.lockTimeout.millis)
+    }
+
+    override fun onStop() {
+        super.onStop()
+        if (!isChangingConfigurations) AppLock.onBackground(vm.vault.enabled, vm.settings.lockTimeout.millis)
+    }
+
+    @Deprecated("Activity Result API launchers end up here")
+    @Suppress("DEPRECATION")
+    override fun startActivityForResult(intent: Intent, requestCode: Int, options: Bundle?) {
+        AppLock.expectReturn()
+        super.startActivityForResult(intent, requestCode, options)
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -100,32 +132,38 @@ class MainActivity : FragmentActivity() {
         if (uris.isNotEmpty()) vm.importWhenUnlocked(uris)
     }
 
-    private fun applyPrivacyFlags() {
-        val s = vm.settings
-        // FLAG_SECURE blocks screenshots/recording; the recents preview has its own switch below.
-        if (s.hideInScreenshots) {
-            window.setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE)
-        } else {
-            window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
-        }
-        setRecentsScreenshotEnabled(!s.hideInRecents)
+    private fun applyPrivacyFlags(secure: Boolean, blankRecents: Boolean) {
+        // FLAG_SECURE blocks screenshots/recording; the recents preview has its own switch.
+        if (secure) window.setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE)
+        else window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+        setRecentsScreenshotEnabled(!blankRecents)
     }
 
-    private fun authenticate() {
-        val prompt = BiometricPrompt(this, ContextCompat.getMainExecutor(this), object : BiometricPrompt.AuthenticationCallback() {
-            override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) { vm.onUnlocked() }
-        })
-        prompt.authenticate(
-            BiometricPrompt.PromptInfo.Builder()
-                .setTitle(getString(R.string.unlock_title))
-                .setAllowedAuthenticators(LOCK_AUTHENTICATORS)
-                .build()
-        )
+    /** The old lock, once, to move to the app PIN: strong biometrics or the phone's screen lock, as before. */
+    private fun legacyUnlock() {
+        val prompt = android.hardware.biometrics.BiometricPrompt.Builder(this)
+            .setTitle(getString(R.string.unlock_title))
+            .setSubtitle(getString(R.string.lock_upgrade_unlock))
+            .setAllowedAuthenticators(
+                android.hardware.biometrics.BiometricManager.Authenticators.BIOMETRIC_STRONG or
+                    android.hardware.biometrics.BiometricManager.Authenticators.DEVICE_CREDENTIAL,
+            )
+            .build()
+        runCatching {
+            prompt.authenticate(
+                android.os.CancellationSignal(), mainExecutor,
+                object : android.hardware.biometrics.BiometricPrompt.AuthenticationCallback() {
+                    override fun onAuthenticationSucceeded(result: android.hardware.biometrics.BiometricPrompt.AuthenticationResult) {
+                        vm.onLegacyUnlocked()
+                    }
+                },
+            )
+        }
     }
 }
 
 @Composable
-private fun LumenApp(vm: LumenViewModel, onUnlock: () -> Unit) {
+private fun LumenApp(vm: LumenViewModel) {
     val c = Ctrl.colors
     val context = LocalContext.current
     val snackbar = remember { SnackbarHostState() }
@@ -140,12 +178,8 @@ private fun LumenApp(vm: LumenViewModel, onUnlock: () -> Unit) {
         else Intent(Intent.ACTION_SEND_MULTIPLE).putParcelableArrayListExtra(Intent.EXTRA_STREAM, ArrayList(uris))
         send.type = "image/*"
         send.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        AppLock.expectReturn()
         context.startActivity(Intent.createChooser(send, shareTitle))
-    }
-
-    if (!vm.unlocked && vm.settings.appLock) {
-        LockScreen(onUnlock)
-        return
     }
 
     Box(Modifier.fillMaxSize().background(c.bg)) {
@@ -173,15 +207,16 @@ private fun LumenApp(vm: LumenViewModel, onUnlock: () -> Unit) {
     }
 }
 
+/** The old lock's screen, shown once after the update to people who had it on (see LumenViewModel.legacyLock). */
 @Composable
-private fun LockScreen(onUnlock: () -> Unit) {
+private fun LegacyLockScreen(onUnlock: () -> Unit) {
     val c = Ctrl.colors
     LaunchedEffect(Unit) { onUnlock() }
     Box(Modifier.fillMaxSize().background(c.bg), contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(18.dp)) {
             Wordmark("Lumen")
             Text(tr(R.string.locked), style = CtrlType.display, color = c.text)
-            MonoLabel(tr(R.string.your_library_stays_private))
+            MonoLabel(tr(R.string.lock_upgrade_unlock))
             CtrlButton(tr(R.string.unlock), onClick = onUnlock, icon = Icons.Outlined.Lock, style = CtrlButtonStyle.Accent)
         }
     }

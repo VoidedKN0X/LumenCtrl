@@ -49,7 +49,7 @@ Part of the [Ctrl series](#the-ctrl-series) by VKNXWorks.
   - Save to the gallery or share; one photo or a batch
 - **Library export and import:** your whole library (originals, edits, versions, ratings, flags, albums, AI masks, denoised copies, removals, music, your presets and LUTs) in one ZIP file, to move to a new phone or keep as a backup; importing adds only what's missing and never replaces or deletes anything
 - **Settings export and import:** your privacy switches, accent and export defaults in a small file; importing shows every setting it would change first, and never touches the app lock
-- **App lock** with fingerprint, face or your screen lock, and **Hide in screenshots** / **Hide in recent apps** (all off until you turn them on)
+- **App lock** with an app PIN and optional fingerprint, the same as every Ctrl app, and **Hide in screenshots** / **Hide in recent apps** (all off until you turn them on)
 - **Ctrl / Signal look**, shared by every Ctrl app: dark and light, high contrast, four accent colors, Space Grotesk and JetBrains Mono
 
 ## Requirements
@@ -111,7 +111,7 @@ If the Obtainium button doesn't open the app, add `https://github.com/VoidedKN0X
 
 | Permission | What LumenCtrl uses it for |
 | --- | --- |
-| Use biometric hardware, use fingerprint hardware | Optional fingerprint or face unlock for the app lock. |
+| Use biometric hardware | Optional fingerprint unlock for the app lock (strong biometrics only). |
 | App-internal broadcasts (`com.vknxworks.lumenctrl.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION`) | Added by AndroidX so that only LumenCtrl itself can send to its own internal receivers. It isn't something you grant and gives no access to anything. |
 
 USB camera import asks Android for access to that one camera when you connect it; Android shows the prompt.
@@ -120,12 +120,16 @@ See [Privacy](#privacy) for what happens to your data.
 
 ## App lock
 
-Turn it on under **Settings > Privacy > App lock**. It's off until you turn it on.
+Turn it on under **Settings > Privacy > App lock**. It's off until you turn it on. It's the same app lock as in every Ctrl app.
 
-- Unlocks with your fingerprint, face or the phone's screen lock, through Android's own BiometricPrompt. Only biometrics Android classes as strong (Class 3) are accepted; with a weaker one, such as camera-only face unlock, the prompt asks for the screen lock. LumenCtrl never sees or stores your PIN or biometrics.
-- Your phone needs a screen lock first; Settings tells you when it doesn't have one.
-- The app locks again when you've been away from it for more than a minute.
-- Photos another app shares into LumenCtrl while it's locked are imported after you unlock.
+- You choose an **app PIN** of at least 6 digits, separate from your phone's PIN. LumenCtrl never stores the PIN itself: it unlocks a key that is protected by the phone's secure hardware, so the PIN can't be guessed on another device.
+- **Fingerprint unlock** is optional and accepts only strong (Class 3) biometrics. The PIN is still needed after a restart and at least every 72 hours.
+- Wrong PINs: after 5 tries the lock waits 30 seconds, doubling up to 15 minutes; changing the clock doesn't skip it.
+- **Lock again:** as soon as you leave, after 1, 5 or 15 minutes, after an hour, or only when the app restarts (1 minute until you choose). Trips LumenCtrl starts itself (the photo picker, camera, file pickers, the share sheet) don't count as leaving, unless you stay away for more than 5 minutes.
+- While a lock or PIN screen shows, LumenCtrl is hidden from screenshots, other apps can't draw over it, and with the lock on, the recent-apps view always shows a blank card.
+- Photos shared into LumenCtrl or opened from a gallery's Edit while it's locked are imported after you unlock.
+- **Forgot PIN?** The PIN can't be recovered. The only way back in is to delete everything kept in LumenCtrl (your library, presets and LUTs), reset its settings and start again. Copies you exported to Pictures/Lumen or Movies/Lumen and the originals in your gallery are not touched. A library export made earlier can be imported again.
+- **Coming from an older version** with the old lock (the phone's screen lock) on: LumenCtrl asks for your screen lock once more and then for a new app PIN. Cancel to turn the lock off.
 
 **Hide in screenshots** and **Hide in recent apps** (both off by default): the first keeps LumenCtrl out of screenshots and screen recordings, the second shows a blank card in the recent-apps view while screenshots still work.
 
