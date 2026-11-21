@@ -201,6 +201,8 @@ data class EditParams(
     val lut: String? = null,
     /** Text and drawing layers on top of the finished photo, in drawing order. */
     val layers: List<Overlay> = emptyList(),
+    /** Removed objects, applied to the source picture in this order (see [Removal]). */
+    val removals: List<Removal> = emptyList(),
 ) {
     operator fun get(p: Param): Float = values[p.key] ?: p.default
 
@@ -209,7 +211,7 @@ data class EditParams(
 
     fun isDefault(): Boolean =
         Param.entries.all { get(it) == it.default } && quarterTurns == 0 && !flipH &&
-            crop.isFull() && curves.isIdentity() && masks.isEmpty() && spots.isEmpty() && video.isDefault() && lut == null && layers.isEmpty()
+            crop.isFull() && curves.isIdentity() && masks.isEmpty() && spots.isEmpty() && video.isDefault() && lut == null && layers.isEmpty() && removals.isEmpty()
 
     /** Lightroom-style paste: global adjustments and curves; keeps this photo's framing, masks and spots. */
     fun pasteAdjustmentsFrom(other: EditParams): EditParams = copy(
@@ -244,6 +246,7 @@ data class EditParams(
             .put("video", video.toJson())
             .put("lut", lut ?: JSONObject.NULL)
             .put("layers", JSONArray().apply { layers.forEach { put(it.toJson()) } })
+            .put("removals", JSONArray().apply { removals.forEach { put(it.toJson()) } })
             .toString(2)
     }
 
@@ -277,6 +280,8 @@ data class EditParams(
                 lut = if (o.isNull("lut")) null else o.optString("lut").takeIf { LUT_ID.matches(it) },
                 layers = o.optJSONArray("layers")?.let { a -> (0 until a.length()).mapNotNull { Overlay.fromJson(a.getJSONObject(it)) } }
                     .orEmpty().take(Overlay.MAX_LAYERS),
+                removals = o.optJSONArray("removals")?.let { a -> (0 until a.length()).mapNotNull { Removal.fromJson(a.getJSONObject(it)) } }
+                    .orEmpty().take(MAX_REMOVALS),
             )
         }
     }

@@ -317,6 +317,7 @@ class Catalog(private val context: Context) {
             com.vknxworks.lumenctrl.edit.Denoiser.fileFor(photo.original),
         ).forEach { it.delete() }
         aiFiles(photo.id).forEach { it.delete() }
+        removalFiles(photo.id).forEach { it.delete() }
         thumbDir.listFiles { f -> f.name.startsWith("${photo.id}_") }?.forEach { it.delete() }
         synchronized(metaLock) { metaCache.remove(photo.id) }
     }
@@ -343,6 +344,18 @@ class Catalog(private val context: Context) {
     suspend fun pruneAiMasks(photo: Photo, keep: Set<String>) = withContext(Dispatchers.IO) {
         aiFiles(photo.id).forEach { f ->
             val id = f.name.removePrefix("${photo.id}.ai-").removeSuffix(".png")
+            if (id !in keep) f.delete()
+        }
+    }
+
+    // ---- Object removal patches (<id>.rm-<removalId>.png, see edit/Removals) ----
+
+    private fun removalFiles(photoId: String) = dir.listFiles { f -> f.name.startsWith("$photoId.rm-") && f.name.endsWith(".png") }.orEmpty().toList()
+
+    /** Deletes removal patches no longer used by the edit or any saved version. */
+    suspend fun pruneRemovals(photo: Photo, keep: Set<String>) = withContext(Dispatchers.IO) {
+        removalFiles(photo.id).forEach { f ->
+            val id = f.name.removePrefix("${photo.id}.rm-").removeSuffix(".png")
             if (id !in keep) f.delete()
         }
     }

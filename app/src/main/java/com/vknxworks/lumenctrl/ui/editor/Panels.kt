@@ -604,6 +604,14 @@ fun HealPanel(vm: LumenViewModel, st: EditorState) {
         if (live) vm.setLiveParams(next, label) else vm.edit(label) { next }
     }
     Column(Modifier.fillMaxSize()) {
+        Row(
+            Modifier.padding(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 2.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically,
+        ) {
+            CtrlChip(tr(R.string.spots), st.healMode == HealMode.SPOT, onClick = { st.healMode = HealMode.SPOT })
+            CtrlChip(tr(R.string.remove_object), st.healMode == HealMode.REMOVE, icon = Icons.Outlined.AutoFixHigh, onClick = { st.healMode = HealMode.REMOVE })
+        }
+        if (st.healMode == HealMode.REMOVE) { RemovePanel(vm, st); return@Column }
         PanelHeader(tr(R.string.heal_and_clone), tr(R.string.x_spots, spots.size), spots.isNotEmpty())
         LazyColumn(contentPadding = PaddingValues(start = 20.dp, end = 20.dp, bottom = 12.dp)) {
             item {
@@ -632,6 +640,46 @@ fun HealPanel(vm: LumenViewModel, st: EditorState) {
                 item {
                     CtrlButton(tr(R.string.clear_all_spots), onClick = { vm.edit(tr(R.string.clear_spots)) { it.copy(spots = emptyList()) }; st.selectedSpot = -1 },
                         style = CtrlButtonStyle.Ghost, modifier = Modifier.padding(top = 8.dp))
+                }
+            }
+        }
+    }
+}
+
+/** Object removal: brush over something, tap Remove, and it's filled in from the rest of the photo on the phone. */
+@Composable
+private fun RemovePanel(vm: LumenViewModel, st: EditorState) {
+    val removals = vm.params.removals
+    LazyColumn(contentPadding = PaddingValues(start = 20.dp, end = 20.dp, bottom = 12.dp)) {
+        item {
+            LabeledSlider(
+                tr(R.string.brush_size), "${(st.removeRadius * 1000).toInt()}", st.removeRadius, 0.005f..0.12f, 0.005f, false,
+                onChange = { st.removeRadius = it }, onDone = {}, onReset = { st.removeRadius = 0.03f },
+            )
+        }
+        item {
+            Row(Modifier.padding(top = 6.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                CtrlButton(
+                    tr(R.string.remove), icon = Icons.Outlined.AutoFixHigh, style = CtrlButtonStyle.Accent,
+                    onClick = {
+                        if (st.removeStrokes.isEmpty()) vm.toast(tr(R.string.brush_over_what_to_remove))
+                        else vm.removeObject(st.removeStrokes.toList(), st.removeRadius) { st.removeStrokes.clear() }
+                    },
+                )
+                if (st.removeStrokes.isNotEmpty()) CtrlButton(tr(R.string.clear_brush), onClick = { st.removeStrokes.clear() }, style = CtrlButtonStyle.Ghost)
+            }
+        }
+        item {
+            MonoLabel(tr(R.string.remove_object_hint), Modifier.padding(start = 4.dp, top = 8.dp))
+        }
+        if (removals.isNotEmpty()) {
+            item {
+                Row(Modifier.padding(top = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+                    MonoLabel(tr(R.string.x_removed, removals.size), Modifier.weight(1f).padding(start = 4.dp))
+                    CtrlButton(
+                        tr(R.string.undo_last_removal), style = CtrlButtonStyle.Ghost,
+                        onClick = { vm.edit(tr(R.string.undo_last_removal)) { it.copy(removals = it.removals.dropLast(1)) } },
+                    )
                 }
             }
         }

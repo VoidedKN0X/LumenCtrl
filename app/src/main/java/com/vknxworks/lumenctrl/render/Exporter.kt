@@ -193,7 +193,10 @@ object Exporter {
         if (params[com.vknxworks.lumenctrl.model.Param.AI_DENOISE] <= 0f) return null
         val f = com.vknxworks.lumenctrl.edit.Denoiser.fileFor(original)
         if (!f.exists()) return null
-        return runCatching { com.vknxworks.lumenctrl.data.ImageLoader.decode(f, maxDim) }.getOrNull()
+        return runCatching {
+            // Removed objects are filled in here too, or blending in the denoised picture would bring them back.
+            com.vknxworks.lumenctrl.edit.Removals.apply(com.vknxworks.lumenctrl.data.ImageLoader.decode(f, maxDim), original, params.removals, recycleInput = true)
+        }.getOrNull()
     }
 
     /** Renders, encodes and applies the metadata policy. Returns the finished file in [outDir]. */
@@ -201,7 +204,10 @@ object Exporter {
         context: Context, original: File, params: EditParams, options: ExportOptions,
         outDir: File, baseName: String, aiAtlas: Bitmap? = null,
     ): File {
-        val src = com.vknxworks.lumenctrl.data.ImageLoader.decode(original, options.maxDim?.coerceAtMost(FULL_RES) ?: FULL_RES)
+        val src = com.vknxworks.lumenctrl.edit.Removals.apply(
+            com.vknxworks.lumenctrl.data.ImageLoader.decode(original, options.maxDim?.coerceAtMost(FULL_RES) ?: FULL_RES),
+            original, params.removals, recycleInput = true,
+        )
         val ultraHdr = options.hdr && options.format == ExportFormat.JPEG
         val dn = loadDenoised(original, params, max(src.width, src.height))
         val out = render(src, params, options.maxDim, aiAtlas, Hdr.readSourceGain(original), withGainmap = ultraHdr, denoised = dn)

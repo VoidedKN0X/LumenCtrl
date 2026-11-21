@@ -179,5 +179,27 @@ data class VideoEdit(
     }
 }
 
+/**
+ * A removed object: the filled-in patch is stored beside the photo (`<id>.rm-<removal id>.png`, with transparency
+ * outside the filled area) and drawn over the source picture inside [l]..[r] × [t]..[b] (source-image uv) before
+ * anything else, so crop, masks, heal spots and every slider work on the cleaned-up picture.
+ */
+data class Removal(val id: String, val l: Float, val t: Float, val r: Float, val b: Float) {
+    fun toJson(): JSONObject = JSONObject().put("id", id)
+        .put("l", l.toDouble()).put("t", t.toDouble()).put("r", r.toDouble()).put("b", b.toDouble())
+
+    companion object {
+        private val ID = Regex("^[a-f0-9]{8}$")
+        fun fromJson(o: JSONObject): Removal? = runCatching {
+            val id = o.getString("id").takeIf { ID.matches(it) } ?: return@runCatching null
+            Removal(
+                id, o.getDouble("l").toFloat().coerceIn(0f, 1f), o.getDouble("t").toFloat().coerceIn(0f, 1f),
+                o.getDouble("r").toFloat().coerceIn(0f, 1f), o.getDouble("b").toFloat().coerceIn(0f, 1f),
+            ).takeIf { it.r > it.l && it.b > it.t }
+        }.getOrNull()
+    }
+}
+
 const val MAX_MASKS = 8
 const val MAX_SPOTS = 24
+const val MAX_REMOVALS = 24

@@ -27,6 +27,7 @@ import com.vknxworks.lumenctrl.render.VideoExporter
 import com.vknxworks.lumenctrl.render.SourceGain
 import com.vknxworks.lumenctrl.edit.Denoiser
 import com.vknxworks.lumenctrl.edit.Segmenter
+import com.vknxworks.lumenctrl.edit.Removals
 import com.vknxworks.lumenctrl.model.AiKind
 import com.vknxworks.lumenctrl.model.EditParams
 import com.vknxworks.lumenctrl.model.LocalMask
@@ -166,7 +167,7 @@ class LumenViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             hdrPreview = runCatching {
                 withContext(Dispatchers.Default) {
-                    val src = ImageLoader.decode(photo.original, maxDim)
+                    val src = Removals.apply(ImageLoader.decode(photo.original, maxDim), photo.original, p.removals, recycleInput = true)
                     Exporter.render(src, p, maxDim, atlasFor(photo, p), sourceGain, withGainmap = true, denoised = denoised)
                         .also { src.recycle() }
                 }
@@ -199,7 +200,8 @@ class LumenViewModel(app: Application) : AndroidViewModel(app) {
             val t0 = System.currentTimeMillis()
             runCatching {
                 withContext(Dispatchers.Default) {
-                    val src = ImageLoader.decode(photo.original, Denoiser.MAX_EDGE)
+                    // Denoise the picture with removed objects already filled in.
+                    val src = Removals.apply(ImageLoader.decode(photo.original, Denoiser.MAX_EDGE), photo.original, params.removals, recycleInput = true)
                     val out = try {
                         Denoiser.denoise(app, src, model,
                             onProgress = { f -> viewModelScope.launch { if (denoiseProgress != null) denoiseProgress = f } },
@@ -212,7 +214,9 @@ class LumenViewModel(app: Application) : AndroidViewModel(app) {
                     out.recycle()
                     ImageLoader.decode(f, 3072)
                 }
-            }.onSuccess { bmp ->
+            }.onSuccess { decoded ->
+                if (openPhoto?.id == photo.id) baseDenoised = decoded
+                val bmp = withContext(Dispatchers.Default) { Removals.apply(decoded, photo.original, params.removals, recycleInput = false) }
                 android.util.Log.d("LumenDenoise", "${model.name} done in ${System.currentTimeMillis() - t0} ms")
                 if (openPhoto?.id == photo.id) {
                     denoised = bmp
@@ -234,6 +238,7 @@ class LumenViewModel(app: Application) : AndroidViewModel(app) {
     fun removeDenoise() {
         val photo = openPhoto ?: return
         denoised = null
+        baseDenoised = null
         edit(tr(R.string.remove_ai_denoise)) { it.with(Param.AI_DENOISE, 0f) }
         viewModelScope.launch(Dispatchers.IO) { Denoiser.fileFor(photo.original).delete() }
     }
@@ -589,6 +594,7 @@ class LumenViewModel(app: Application) : AndroidViewModel(app) {
             val p = catalog.photo(id)
             val params = catalog.loadParams(p)
             val src = ImageLoader.decodeAny(p, maxDim, params.video.trimStartMs + 500)
+                .let { if (p.isVideo) it else Removals.apply(it, p.original, params.removals, recycleInput = true) }
             if (params.isDefault()) src else {
                 val dn = Exporter.loadDenoised(p.original, params, maxDim)
                 Exporter.render(src, params, maxDim, atlasFor(p, params), denoised = dn).also { src.recycle(); dn?.recycle() }
@@ -665,12 +671,13 @@ class LumenViewModel(app: Application) : AndroidViewModel(app) {
             versions = catalog.versions(photo)
             aiMasks = catalog.loadAiMasks(photo)
             sourceGain = withContext(Dispatchers.IO) { Hdr.readSourceGain(photo.original) }
-            denoised = withContext(Dispatchers.IO) {
+            baseDenoised = withContext(Dispatchers.IO) {
                 Denoiser.fileFor(photo.original).takeIf { it.exists() }
                     ?.let { runCatching { ImageLoader.decode(it, 3072) }.getOrNull() }
             }
+            denoised = baseDenoised?.let { withContext(Dispatchers.Default) { Removals.apply(it, photo.original, loaded.removals, recycleInput = false) } }
             hdrPreview = null
-            preview = runCatching {
+            val base = runCatching {
                 // 3072 px keeps detail when zooming in the loupe.
                 withContext(Dispatchers.IO) { ImageLoader.decode(photo.original, 3072) }
             }.getOrElse {
@@ -679,6 +686,82 @@ class LumenViewModel(app: Application) : AndroidViewModel(app) {
                 screen = Screen.LIBRARY
                 null
             }
+            basePreview = base
+            appliedRemovals = loaded.removals
+            preview = base?.let { withContext(Dispatchers.Default) { Removals.apply(it, photo.original, loaded.removals, recycleInput = false) } }
+        }
+    }
+
+    // ---- Object removal ----
+
+    /** The open photo's picture without removals, and the removals [preview] and [denoised] were made with. */
+    private var basePreview: Bitmap? = null
+    private var baseDenoised: Bitmap? = null
+    private var appliedRemovals: List<com.vknxworks.lumenctrl.model.Removal> = emptyList()
+
+    /** After undo, redo or a restored version: rebuilds the editor's picture when the set of removals changed. */
+    private fun syncRemovals() {
+        val photo = openPhoto ?: return
+        if (photo.isVideo) return
+        val want = params.removals
+        if (want == appliedRemovals) return
+        val base = basePreview ?: return
+        val dnBase = baseDenoised
+        appliedRemovals = want
+        viewModelScope.launch {
+            val (pic, dn) = withContext(Dispatchers.Default) {
+                Removals.apply(base, photo.original, want, recycleInput = false) to
+                    dnBase?.let { Removals.apply(it, photo.original, want, recycleInput = false) }
+            }
+            // Only if nothing changed meanwhile.
+            if (openPhoto?.id == photo.id && appliedRemovals == want) {
+                preview = pic
+                if (dnBase != null && baseDenoised === dnBase) denoised = dn
+            }
+        }
+    }
+
+    var removing by mutableStateOf(false); private set
+    @Volatile private var removeCancel = false
+
+    /**
+     * Removes what the [strokes] (x, y pairs in source uv) brushed over, filling it from the rest of the photo on
+     * the phone. [radius] is the brush radius in picture heights.
+     */
+    fun removeObject(strokes: List<List<Float>>, radius: Float, onDone: () -> Unit) {
+        val photo = openPhoto ?: return
+        val pic = preview ?: return
+        if (removing) return
+        if (params.removals.size >= com.vknxworks.lumenctrl.model.MAX_REMOVALS) {
+            message = tr(R.string.up_to_x_removals_per_photo, com.vknxworks.lumenctrl.model.MAX_REMOVALS); return
+        }
+        removing = true
+        removeCancel = false
+        viewModelScope.launch {
+            busy = tr(R.string.removing_object)
+            val t0 = System.currentTimeMillis()
+            runCatching {
+                withContext(Dispatchers.Default) {
+                    val (removal, patch) = Removals.compute(pic, strokes, radius) { removeCancel || openPhoto?.id != photo.id }
+                    Removals.save(photo.original, removal.id, patch)
+                    patch.recycle()
+                    removal
+                }
+            }.onSuccess { removal ->
+                android.util.Log.d("LumenRemove", "object removed in ${System.currentTimeMillis() - t0} ms")
+                if (openPhoto?.id == photo.id) {
+                    edit(tr(R.string.remove_object)) { it.copy(removals = it.removals + removal) }
+                    onDone()
+                }
+            }.onFailure {
+                message = when (it) {
+                    is Removals.NothingToRemove -> tr(R.string.brush_over_what_to_remove)
+                    is com.vknxworks.lumenctrl.edit.Inpaint.Cancelled -> null
+                    else -> tr(R.string.couldnt_remove_it_x, it.message)
+                }
+            }
+            busy = null
+            removing = false
         }
     }
 
@@ -686,8 +769,13 @@ class LumenViewModel(app: Application) : AndroidViewModel(app) {
         val photo = openPhoto ?: return
         val finalParams = params
         val keepAi = (listOf(finalParams) + versions.map { it.params }).flatMap { p -> p.masks.map { it.id } }.toSet()
+        val keepRemovals = (listOf(finalParams) + versions.map { it.params }).flatMap { p -> p.removals.map { it.id } }.toSet()
         openPhoto = null
         preview = null
+        basePreview = null
+        baseDenoised = null
+        appliedRemovals = emptyList()
+        removeCancel = true
         aiMasks = emptyMap()
         sourceGain = null
         denoised = null
@@ -697,6 +785,7 @@ class LumenViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             catalog.saveParams(photo, finalParams)
             catalog.pruneAiMasks(photo, keepAi)
+            catalog.pruneRemovals(photo, keepRemovals)
             renderThumb(photo, finalParams)
             thumbVersion++
             refresh()
@@ -783,6 +872,7 @@ class LumenViewModel(app: Application) : AndroidViewModel(app) {
                 if (p.isDefault()) photo.thumb.delete()
                 else {
                     val src = ImageLoader.decodeAny(photo, 1024, p.video.trimStartMs + 500)
+                        .let { if (photo.isVideo) it else Removals.apply(it, photo.original, p.removals, recycleInput = true) }
                     val dn = Exporter.loadDenoised(photo.original, p, 1024)
                     val thumb = Exporter.render(src, p, maxOut = 512, aiAtlas = atlasFor(photo, p), denoised = dn)
                     Exporter.saveJpeg(thumb, photo.thumb)
@@ -808,6 +898,7 @@ class LumenViewModel(app: Application) : AndroidViewModel(app) {
         committed = params
         updateHistory()
         persist()
+        syncRemovals()
     }
 
     /** A discrete edit with its own history step. */
@@ -823,14 +914,14 @@ class LumenViewModel(app: Application) : AndroidViewModel(app) {
         val step = undoStack.removeLastOrNull() ?: return
         redoStack.addLast(Step(step.label, params))
         params = step.before; committed = step.before
-        updateHistory(); persist()
+        updateHistory(); persist(); syncRemovals()
     }
 
     fun redo() {
         val step = redoStack.removeLastOrNull() ?: return
         undoStack.addLast(Step(step.label, params))
         params = step.before; committed = step.before
-        updateHistory(); persist()
+        updateHistory(); persist(); syncRemovals()
     }
 
     /** Steps back until [count] history entries remain. */

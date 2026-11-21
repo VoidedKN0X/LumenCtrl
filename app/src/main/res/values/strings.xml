@@ -501,4 +501,15 @@
     <string name="clear_drawing_text">Removes every line you drew on this photo. Text stays. You can undo this.</string>
     <string name="up_to_x_layers_per_photo">Up to %1$d text and drawing layers per photo</string>
     <string name="color_x">Color %1$s</string>
+    <!-- Object removal -->
+    <string name="spots">Spots</string>
+    <string name="remove_object">Remove object</string>
+    <string name="removing_object">Removing object on this phone…</string>
+    <string name="brush_over_what_to_remove">Brush over what you want to remove</string>
+    <string name="clear_brush">Clear brush</string>
+    <string name="remove_object_hint">Paint over the object, a little past its edges, then tap Remove. LumenCtrl fills it in from the rest of the photo, on this phone. Works best on objects against grass, sky, water, walls and other plain or repeating backgrounds.</string>
+    <string name="x_removed">%1$d removed</string>
+    <string name="undo_last_removal">Undo last removal</string>
+    <string name="up_to_x_removals_per_photo">Up to %1$d removals per photo</string>
+    <string name="couldnt_remove_it_x">Couldn\'t remove it: %1$s</string>
 </resources>

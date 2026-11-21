@@ -28,6 +28,7 @@ Part of the [Ctrl series](#the-ctrl-series) by VKNXWorks.
 - **Offline AI masks:** select the Subject, Background, People, Face skin, Body skin, Hair, Clothes or Sky with one tap, worked out on the phone in about half a second
 - **Offline AI Denoise:** Quality or Fast. It runs once per photo; an Amount slider then blends it in live
 - **Heal and clone** spots, with the source picked for you
+- **Object removal:** brush over something (a person in the background, a bin, a wire) and LumenCtrl fills it in from the rest of the photo, on the phone, without any AI model or download
 - **Text and drawing:** add text layers (size, colour, optional background box, drag to place) and draw freehand on photos; they're part of the edit, so you can move, change or undo them at any time, and they're drawn into exports, thumbnails and slideshows exactly as in the editor
 - **Crop:** aspect locks, rotate, flip, auto-straighten, and vertical and horizontal perspective
 - **Presets:** 12 looks with an amount slider; **save your own** from any edit (sliders, curves and LUT); copy and paste an edit onto other photos
@@ -77,6 +78,7 @@ If the Obtainium button doesn't open the app, add `https://github.com/VoidedKN0X
 - **Edit:** tap a photo. The bar at the bottom has **Presets**, **Edit** (all the tool groups), **Masks**, **Heal**, **Text & draw** and **Crop**. Pinch or double-tap to zoom; hold the compare button to see the original.
 - **Your presets:** in **Presets**, tap **Save current look** to keep this photo's look as a preset; it appears under **Your presets** with its own amount slider.
 - **LUTs:** in **Edit > Color**, tap **Import .cube** and pick a LUT file. It's stored in LumenCtrl and listed there for every photo and video.
+- **Remove an object:** in **Heal**, switch to **Remove object**, paint over it (a little past its edges) and tap **Remove**.
 - **Text and drawing:** in **Text & draw**, tap **Add text**, type, and drag it into place; tap a text to change its size or colour. Switch to **Draw** to draw with one finger.
 - **AI masks:** in **Masks**, tap one of the AI chips (Subject, Sky, People and so on), then use the local sliders.
 - **AI Denoise:** in **Edit > Detail**, tap **Quality** (best) or **Fast**, keep the editor open until it's done, then set **Amount**.
@@ -140,6 +142,7 @@ LumenCtrl follows the design of desktop raw editors, written from scratch for An
 
 - **One shader for everything.** The whole develop pipeline (spots, masks, lens corrections, noise reduction, sharpening, tone, curves, color, grading, effects, HDR) is a single OpenGL ES 3.0 fragment shader. The preview, the histogram, exports, thumbnails and video frames all go through it, so what you see is what you export.
 - **Edits are data.** Each slider is one entry in the `Param` list; the edit is saved as JSON beside the untouched original.
+- **Object removal** (`edit/Inpaint.kt`, `edit/Removals.kt`): content-aware fill written from scratch, no model. The brushed area and a margin around it are worked on at up to 1024 px; a coarse-to-fine pyramid runs PatchMatch to find, for every 7×7 patch touching the hole, the most similar patch outside it, and each hole pixel becomes the weighted average of what those patches say. The result is stored beside the photo as a small PNG patch with soft edges and drawn over the source picture before everything else (preview, export, thumbnails, AI Denoise), so the original stays untouched and Undo simply takes the patch away. It works best on plain or repeating backgrounds; large objects in busy scenes can leave visible repeats.
 - **LUTs** (`model/CubeLut.kt`, `data/Luts.kt`): a `.cube` file is parsed once on import and stored as a small binary table; the shader samples it as a 3D texture (half floats, trilinear) after colour grading, so preview, export and video all use the same table.
 - **AI masks** (`edit/Segmenter.kt`): two bundled segmentation models find people, animals, vehicles and body parts. The winning class at each pixel becomes the mask, a guided filter snaps it to the photo's edges, and it's stored beside the photo. Sky uses LumenCtrl's own rules: smooth, bright or blue, connected to the top edge, and not warm-tinted.
 - **AI Denoise** (`edit/Denoiser.kt`): the photo (up to 4096 px) is processed in 256 px tiles with 16 px overlaps. Each tile's average color is pinned to the original's, and the coarse tones are taken from the original, so the result has no tile seams or color casts. It's saved once as a denoised copy and blended live with Amount. On the test phone, a 4.3 MP photo takes about 20 s with Fast and 30 s with Quality.

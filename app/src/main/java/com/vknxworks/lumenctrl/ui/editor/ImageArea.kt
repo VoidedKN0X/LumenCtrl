@@ -357,6 +357,36 @@ fun ImageArea(vm: LumenViewModel, st: EditorState, modifier: Modifier) {
                         onDragCancel = { if (dragIndex >= 0) vm.commit(); dragIndex = -1 },
                     )
                 }
+            st.tool == Tool.HEAL && st.healMode == HealMode.REMOVE -> Modifier
+                .pointerInput("remove-tap") {
+                    detectTapGestures { pos ->
+                        val m = currentMap ?: return@detectTapGestures
+                        val (u, v) = m.toSource(pos.x, pos.y)
+                        if (u !in 0f..1f || v !in 0f..1f) return@detectTapGestures
+                        st.removeStrokes.add(listOf(u, v))
+                    }
+                }
+                .pointerInput("remove-brush") {
+                    val minStep = 3.dp.toPx()
+                    var last = Offset.Zero
+                    detectDragGestures(
+                        onDragStart = { pos ->
+                            val m = currentMap ?: return@detectDragGestures
+                            val (u, v) = m.toSource(pos.x, pos.y)
+                            last = pos
+                            st.removeStrokes.add(listOf(u, v))
+                        },
+                        onDrag = { change, _ ->
+                            val m = currentMap ?: return@detectDragGestures
+                            change.consume()
+                            if ((change.position - last).getDistance() < minStep || st.removeStrokes.isEmpty()) return@detectDragGestures
+                            last = change.position
+                            val (u, v) = m.toSource(change.position.x, change.position.y)
+                            val i = st.removeStrokes.lastIndex
+                            if (st.removeStrokes[i].size < 4000) st.removeStrokes[i] = st.removeStrokes[i] + u + v
+                        },
+                    )
+                }
             st.tool == Tool.HEAL -> Modifier
                 .pointerInput(Unit) {
                     detectTapGestures { pos ->
@@ -501,7 +531,21 @@ fun ImageArea(vm: LumenViewModel, st: EditorState, modifier: Modifier) {
                     }
                     handles.forEachIndexed { i, h -> drawHandle(h, if (i == 0) c.accent else Color.White) }
                 }
-                Tool.HEAL -> params.spots.forEachIndexed { i, s ->
+                Tool.HEAL -> if (st.healMode == HealMode.REMOVE) {
+                    // What you've brushed over, in a see-through accent colour.
+                    st.removeStrokes.forEach { stroke ->
+                        if (stroke.size < 2) return@forEach
+                        val first = m.toScreen(stroke[0], stroke[1])
+                        val rad = (m.toScreen(stroke[0], stroke[1] + st.removeRadius) - first).getDistance()
+                        if (stroke.size == 2) { drawCircle(c.accent.copy(alpha = 0.45f), rad, first); return@forEach }
+                        val path = Path().apply {
+                            moveTo(first.x, first.y)
+                            var k = 2
+                            while (k + 1 < stroke.size) { val p = m.toScreen(stroke[k], stroke[k + 1]); lineTo(p.x, p.y); k += 2 }
+                        }
+                        drawPath(path, c.accent.copy(alpha = 0.45f), style = Stroke(rad * 2f, cap = androidx.compose.ui.graphics.StrokeCap.Round, join = androidx.compose.ui.graphics.StrokeJoin.Round))
+                    }
+                } else params.spots.forEachIndexed { i, s ->
                     val t = m.toScreen(s.tx, s.ty); val src = m.toScreen(s.sx, s.sy)
                     val r = (m.toScreen(s.tx, s.ty + s.radius) - t).getDistance()
                     val sel = i == st.selectedSpot
@@ -530,7 +574,8 @@ fun ImageArea(vm: LumenViewModel, st: EditorState, modifier: Modifier) {
         val hint = when {
             st.pickWhiteBalance -> tr(R.string.tap_something_neutral_gray)
             st.pickFocus -> tr(R.string.tap_the_point_to_keep_sharp)
-            st.tool == Tool.HEAL && params.spots.isEmpty() -> tr(R.string.tap_a_blemish_to_heal_it)
+            st.tool == Tool.HEAL && st.healMode == HealMode.REMOVE && st.removeStrokes.isEmpty() -> tr(R.string.brush_over_what_to_remove)
+            st.tool == Tool.HEAL && st.healMode == HealMode.SPOT && params.spots.isEmpty() -> tr(R.string.tap_a_blemish_to_heal_it)
             st.tool == Tool.LAYERS && st.layerMode == LayerMode.DRAW -> tr(R.string.draw_with_one_finger)
             st.tool == Tool.LAYERS && params.layers.none { it.kind == Overlay.Kind.TEXT } -> tr(R.string.add_text_below)
             st.tool == Tool.MASKS && params.masks.getOrNull(st.selectedMask)?.type == MaskType.LUMA -> tr(R.string.tap_to_pick_a_brightness_range)

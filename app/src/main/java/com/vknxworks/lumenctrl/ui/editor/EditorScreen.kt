@@ -66,6 +66,9 @@ enum class Tool(val label: String) {
 /** What a drag on the photo does in Text & draw. */
 enum class LayerMode { TEXT, DRAW }
 
+/** Heal: single spots, or brushing over a whole object to remove it. */
+enum class HealMode { SPOT, REMOVE }
+
 enum class Sheet { EXPORT, VERSIONS, HISTORY, INFO }
 
 /** UI-only editor state (which tool, selections, pick modes). Edit data lives in the ViewModel. */
@@ -90,6 +93,10 @@ class EditorState {
     var selectedLayer by mutableStateOf<String?>(null)
     var drawColor by mutableIntStateOf(com.vknxworks.lumenctrl.model.Overlay.WHITE)
     var drawWidth by mutableFloatStateOf(0.008f)
+    var healMode by mutableStateOf(HealMode.SPOT)
+    /** Brush strokes over the object to remove (x, y pairs in source uv), not yet applied. */
+    val removeStrokes = androidx.compose.runtime.mutableStateListOf<List<Float>>()
+    var removeRadius by mutableFloatStateOf(0.03f)
 }
 
 private val toolItems = listOf(
