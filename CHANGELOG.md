@@ -4,6 +4,12 @@ What changed in each LumenCtrl release. Every release on the [Releases page](htt
 
 To publish a new version: bump `versionCode` and `versionName` in `app/build.gradle.kts`, add a section here, and push to `main`. Pushes without a version bump only build; they don't make a release.
 
+## Unreleased
+
+### Added
+
+- **LumenCtrl in French and German, following the phone's language.** Every screen, slider, preset name, setting and message now also has a French translation (polite "vous", as Android itself uses) and a German one (informal "du", as modern Android apps use). Android picks French or German when your phone is set to that language; otherwise LumenCtrl stays in English, or Dutch as before. LumenCtrl now also tells Android which languages it has (English, Dutch, French, German), so you can choose one for LumenCtrl alone in Android's per-app language setting. Built-in presets are shown with French or German names but edits still store the English names, so a photo keeps its preset whatever language the phone uses. Product and model names (AI Denoise, NAFNet, U-Net, Ultra HDR, LUT), units, folder names and the app name stay as they are.
+
 ## v0.3.0 (2026-11-21)
 
 Built and checked by CI only: nothing in this release had been run on a phone when it was published.
