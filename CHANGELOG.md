@@ -4,9 +4,9 @@ What changed in each LumenCtrl release. Every release on the [Releases page](htt
 
 To publish a new version: bump `versionCode` and `versionName` in `app/build.gradle.kts`, add a section here, and push to `main`. Pushes without a version bump only build; they don't make a release.
 
-## Unreleased
+## v0.3.0 (2026-11-21)
 
-Changes on `main` that aren't in a release yet. They ship with the next version.
+Built and checked by CI only: nothing in this release had been run on a phone when it was published.
 
 Your library, edits, masks, AI masks, versions and settings from 0.2.0 open unchanged: everything new (LUTs, layers, removals, music) is stored as extra fields in the same files, which older versions simply ignore. If you used the old app lock, see Security below: you'll be asked to choose an app PIN.
 
