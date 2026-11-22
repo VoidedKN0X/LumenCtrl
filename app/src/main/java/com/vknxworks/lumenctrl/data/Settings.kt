@@ -84,7 +84,21 @@ class Settings(context: Context) {
     /** One setting that an import would change: its name, the value now and the value from the file. */
     data class Change(val label: String, val from: String, val to: String)
 
-    fun changesFrom(i: Incoming, accentName: (Int) -> String, onOff: (Boolean) -> String): List<Change> = buildList {
+    /**
+     * A settings file can only make privacy stricter, never weaker: "Hide in screenshots" and "Hide in recent apps"
+     * stay on if they are on now, and the export metadata choice only moves towards removing more
+     * (Keep all -> Remove location -> Strip all). So a file someone hands you can't quietly turn these off.
+     */
+    fun stricter(i: Incoming): Incoming = i.copy(
+        hideInScreenshots = ImportRules.keepOn(hideInScreenshots, i.hideInScreenshots),
+        hideInRecents = ImportRules.keepOn(hideInRecents, i.hideInRecents),
+        export = i.export.copy(
+            metadata = ImportRules.stricterOf(export.metadata, i.export.metadata, METADATA_STRICTNESS),
+        ),
+    )
+
+    fun changesFrom(raw: Incoming, accentName: (Int) -> String, onOff: (Boolean) -> String): List<Change> = buildList {
+        val i = stricter(raw)
         fun add(label: String, a: String, b: String) { if (a != b) add(Change(label, a, b)) }
         add(com.vknxworks.lumenctrl.tr(com.vknxworks.lumenctrl.R.string.hide_in_screenshots), onOff(hideInScreenshots), onOff(i.hideInScreenshots))
         add(com.vknxworks.lumenctrl.tr(com.vknxworks.lumenctrl.R.string.hide_in_recent_apps), onOff(hideInRecents), onOff(i.hideInRecents))
@@ -99,7 +113,8 @@ class Settings(context: Context) {
         add(com.vknxworks.lumenctrl.tr(com.vknxworks.lumenctrl.R.string.ultra_hdr), onOff(e.hdr), onOff(n.hdr))
     }
 
-    fun apply(i: Incoming) {
+    fun apply(raw: Incoming) {
+        val i = stricter(raw)
         updateHideInScreenshots(i.hideInScreenshots)
         updateHideInRecents(i.hideInRecents)
         updateAccent(i.accent)
@@ -108,6 +123,9 @@ class Settings(context: Context) {
 
     companion object {
         const val FILE_FORMAT = "lumen-settings"
+
+        /** Export metadata choices from least to most private. */
+        private val METADATA_STRICTNESS = listOf(MetadataMode.ALL, MetadataMode.NO_LOCATION, MetadataMode.NONE)
 
         /** Reads a settings file; values that don't make sense fall back to the defaults. Throws if it isn't one. */
         fun parseFile(json: String, accents: Int): Incoming {

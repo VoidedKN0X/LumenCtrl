@@ -568,7 +568,10 @@
     <string name="lock_fingerprint_changed">Ein Fingerabdruck wurde hinzugefügt oder entfernt. Entsperre mit deiner PIN und schalte dann das Entsperren per Fingerabdruck wieder ein.</string>
     <string name="lock_fingerprint_failed">Entsperren mit deinem Fingerabdruck fehlgeschlagen. Verwende deine PIN.</string>
     <string name="lock_forgot">PIN vergessen?</string>
-    <string name="lock_forgot_body">Die PIN kann nicht wiederhergestellt werden. LumenCtrl löscht alles, was in der App gespeichert ist (deine Mediathek mit Fotos und Videos samt Bearbeitungen, deine Presets und LUTs), setzt seine Einstellungen zurück und schaltet die App-Sperre aus. Nach Pictures/Lumen oder Movies/Lumen exportierte Kopien und die Originale in deiner Galerie werden nicht gelöscht.</string>
+    <string name="lock_forgot_body">Die PIN kann nicht wiederhergestellt werden. LumenCtrl löscht alles, was in der App gespeichert ist (deine Mediathek mit Fotos und Videos samt Bearbeitungen, deine Presets und LUTs), setzt seine Einstellungen zurück und schaltet die App-Sperre aus. Nach Pictures/Lumen oder Movies/Lumen exportierte Kopien und die Originale in deiner Galerie werden nicht gelöscht. Wenn dein Smartphone eine Displaysperre hat, bestätigst du zuerst damit.</string>
+    <string name="lock_reset_prompt_title">App-Sperre von LumenCtrl zurücksetzen</string>
+    <string name="lock_reset_prompt_subtitle">Bestätige mit der Displaysperre deines Smartphones, dass du es bist</string>
+    <string name="lock_reset_prompt_failed">Die Displaysperre konnte nicht angezeigt werden</string>
     <string name="lock_forgot_confirm">Alles löschen und zurücksetzen</string>
     <string name="lock_forgot_title">PIN vergessen?</string>
     <string name="lock_next">Weiter</string>

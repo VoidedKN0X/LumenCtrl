@@ -41,6 +41,7 @@ import com.vknxworks.lumenctrl.render.Exporter
 import com.vknxworks.lumenctrl.render.Histogram
 import com.vknxworks.lumenctrl.ui.lock.AppLock
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -308,7 +309,8 @@ class LumenViewModel(app: Application) : AndroidViewModel(app), com.vknxworks.lu
         viewModelScope.launch {
             busy = tr(R.string.merging_x_exposures_to_hdr, ids.size)
             runCatching {
-                val files = ids.map { catalog.photo(it) }.filter { !it.isVideo }.map { it.original }
+                // catalog.photo reads the disk: off the main thread.
+                val files = withContext(Dispatchers.IO) { ids.map { catalog.photo(it) } }.filter { !it.isVideo }.map { it.original }
                 val r = withContext(Dispatchers.Default) { HdrMerge.merge(files) }
                 catalog.importBitmap(r.sdr, "HDR merge ${SimpleDateFormat("yyyy-MM-dd HH.mm", Locale.US).format(Date())}.jpg")
                 r.gainmap != null
@@ -609,6 +611,13 @@ class LumenViewModel(app: Application) : AndroidViewModel(app), com.vknxworks.lu
         // Locking wipes the vault key from memory.
         AppLock.onLocked = { vault.close() }
         com.vknxworks.lumenctrl.render.OverlayPainter.init(app)
+        // Edited copies made for sharing, and exports that failed part-way, must not stay on disk outside the
+        // library (they were only cleared at the next share before). The camera's capture folder is left alone:
+        // a photo being taken right now may still be on its way in.
+        viewModelScope.launch(Dispatchers.IO) {
+            File(app.cacheDir, "share").deleteRecursively()
+            File(app.cacheDir, "export").deleteRecursively()
+        }
         refresh(); loadLooks()
     }
 
@@ -728,8 +737,8 @@ class LumenViewModel(app: Application) : AndroidViewModel(app), com.vknxworks.lu
                         if (share) {
                             uris += FileProvider.getUriForFile(app, "${app.packageName}.files", file)
                         } else {
-                            Exporter.saveToGallery(app, file, options.format.mime)
-                            file.delete()
+                            // Deleted also when saving to the gallery fails.
+                            try { Exporter.saveToGallery(app, file, options.format.mime) } finally { file.delete() }
                         }
                     }
                     uris
@@ -1044,7 +1053,8 @@ class LumenViewModel(app: Application) : AndroidViewModel(app), com.vknxworks.lu
         val app = getApplication<Application>()
         viewModelScope.launch {
             if (openPhoto?.isVideo == true) catalog.saveParams(openPhoto!!, params)
-            val clips = ids.map { catalog.photo(it) }.filter { it.isVideo }.map { clipFor(it, catalog.loadParams(it)) }
+            // catalog.photo reads the disk: off the main thread.
+            val clips = withContext(Dispatchers.IO) { ids.map { catalog.photo(it) } }.filter { it.isVideo }.map { clipFor(it, catalog.loadParams(it)) }
             if (clips.isEmpty()) return@launch
             val jobs = if (reel) listOf(clips) else clips.map { listOf(it) }
             val outDir = File(app.cacheDir, if (share) "share" else "export").apply { if (share) deleteRecursively(); mkdirs() }
@@ -1055,15 +1065,23 @@ class LumenViewModel(app: Application) : AndroidViewModel(app), com.vknxworks.lu
                     val label = if (reel) tr(R.string.rendering_reel) else tr(R.string.exporting_video_x_of_x, j + 1, jobs.size)
                     busy = label
                     val out = File(outDir, "Lumen_${if (reel) "reel" else "video"}_${stamp()}_${j + 1}.mp4")
-                    val audioOk = withContext(Dispatchers.Default) {
-                        VideoExporter.export(job, out, maxEdge) { f -> viewModelScope.launch { busy = "$label · ${(f * 100).toInt()}%" } }
-                    }
-                    if (!audioOk) audioDropped = true
-                    if (share) uris += FileProvider.getUriForFile(app, "${app.packageName}.files", out)
-                    else {
-                        withContext(Dispatchers.IO) { VideoExporter.saveToGallery(app, out) }
-                        if (reel) catalog.import(listOf(Uri.fromFile(out)))
-                        out.delete()
+                    var shared = false
+                    try {
+                        val audioOk = withContext(Dispatchers.Default) {
+                            VideoExporter.export(job, out, maxEdge) { f -> viewModelScope.launch { busy = "$label · ${(f * 100).toInt()}%" } }
+                        }
+                        if (!audioOk) audioDropped = true
+                        if (share) {
+                            uris += FileProvider.getUriForFile(app, "${app.packageName}.files", out)
+                            shared = true
+                        } else {
+                            withContext(Dispatchers.IO) { VideoExporter.saveToGallery(app, out) }
+                            if (reel) catalog.import(listOf(Uri.fromFile(out)))
+                        }
+                    } finally {
+                        // A gallery export never leaves its file behind, also when it fails, and neither does a
+                        // failed share render. A file handed to the share sheet stays until the next share or app start.
+                        if (!shared) withContext(NonCancellable + Dispatchers.IO) { out.delete() }
                     }
                 }
             }.onSuccess {

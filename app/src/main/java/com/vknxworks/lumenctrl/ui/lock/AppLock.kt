@@ -1,6 +1,7 @@
 package com.vknxworks.lumenctrl.ui.lock
 
 import android.app.Activity
+import android.app.KeyguardManager
 import android.content.Context
 import android.content.ContextWrapper
 import android.hardware.biometrics.BiometricManager
@@ -270,6 +271,53 @@ object AppLock {
             if (finish()) onError(activity.getString(R.string.lock_fingerprint_failed))
         }
     }
+
+    /** The phone has a screen lock (PIN, pattern or password) that can confirm it's the owner. */
+    fun screenLockSet(context: Context): Boolean = runCatching {
+        context.getSystemService(KeyguardManager::class.java)?.isDeviceSecure == true
+    }.getOrDefault(true)
+
+    /**
+     * The phone's own screen lock (or a strong fingerprint). Only used for "Forgot PIN?", so that resetting the
+     * app lock isn't open to anyone who picks up the unlocked phone. [onResult] gets null when confirmed, or an
+     * error message; cancelling calls [onCancel] instead.
+     */
+    fun screenLockAuthenticate(activity: Activity, onCancel: () -> Unit, onResult: (String?) -> Unit) {
+        // Replaces a prompt that is still marked as open; its late answer (if any) is ignored below.
+        promptSignal?.let { runCatching { it.cancel() } }
+        val generation = ++promptGeneration
+        val signal = CancellationSignal()
+        promptSignal = signal
+        promptStartedAt = SystemClock.elapsedRealtime()
+        fun finish(): Boolean {
+            if (generation != promptGeneration || promptSignal !== signal) return false
+            promptSignal = null
+            return true
+        }
+        try {
+            val prompt = BiometricPrompt.Builder(activity)
+                .setTitle(activity.getString(R.string.lock_reset_prompt_title))
+                .setSubtitle(activity.getString(R.string.lock_reset_prompt_subtitle))
+                .setAllowedAuthenticators(
+                    BiometricManager.Authenticators.BIOMETRIC_STRONG or BiometricManager.Authenticators.DEVICE_CREDENTIAL,
+                )
+                .build()
+            prompt.authenticate(signal, activity.mainExecutor, object : BiometricPrompt.AuthenticationCallback() {
+                override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
+                    if (finish()) onResult(null)
+                }
+
+                override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
+                    if (!finish()) return
+                    val cancelled = errorCode == BiometricPrompt.BIOMETRIC_ERROR_USER_CANCELED ||
+                        errorCode == BiometricPrompt.BIOMETRIC_ERROR_CANCELED
+                    if (cancelled) onCancel() else onResult(errString.toString())
+                }
+            })
+        } catch (e: Exception) {
+            if (finish()) onResult(activity.getString(R.string.lock_reset_prompt_failed))
+        }
+    }
 }
 
 /**
@@ -479,7 +527,16 @@ private fun PinLockScreen() {
             confirmButton = {
                 TextButton(onClick = {
                     forgetting = false
-                    scope.launch { c.forgetEverything() }
+                    val a = activity
+                    if (!AppLock.screenLockSet(context)) {
+                        // No screen lock on the phone to confirm with: reset as before.
+                        scope.launch { c.forgetEverything() }
+                    } else if (a != null && !a.isFinishing && !a.isDestroyed) {
+                        // Only the phone's owner may reset it: confirm with the phone's own screen lock first.
+                        AppLock.screenLockAuthenticate(a, onCancel = {}) { error ->
+                            if (error == null) scope.launch { c.forgetEverything() } else message = error
+                        }
+                    }
                 }) { Text(stringResource(R.string.lock_forgot_confirm), color = LockError) }
             },
             dismissButton = { TextButton(onClick = { forgetting = false }) { Text(stringResource(R.string.cancel), color = Ctrl.colors.text) } },

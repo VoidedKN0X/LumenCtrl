@@ -568,7 +568,10 @@
     <string name="lock_fingerprint_changed">Une empreinte a été ajoutée ou supprimée. Déverrouillez avec votre code, puis réactivez le déverrouillage par empreinte.</string>
     <string name="lock_fingerprint_failed">Impossible de déverrouiller avec votre empreinte. Utilisez votre code.</string>
     <string name="lock_forgot">Code oublié ?</string>
-    <string name="lock_forgot_body">Le code ne peut pas être récupéré. LumenCtrl va supprimer tout ce qui est conservé dans l\'appli (votre bibliothèque de photos et vidéos avec leurs retouches, vos préréglages et LUT), réinitialiser ses paramètres et désactiver le verrouillage. Les copies exportées dans Pictures/Lumen ou Movies/Lumen et les originaux de votre galerie ne sont pas supprimés.</string>
+    <string name="lock_forgot_body">Le code ne peut pas être récupéré. LumenCtrl va supprimer tout ce qui est conservé dans l\'appli (votre bibliothèque de photos et vidéos avec leurs retouches, vos préréglages et LUT), réinitialiser ses paramètres et désactiver le verrouillage. Les copies exportées dans Pictures/Lumen ou Movies/Lumen et les originaux de votre galerie ne sont pas supprimés. Si votre téléphone a un verrouillage d\'écran, vous confirmerez d\'abord avec celui-ci.</string>
+    <string name="lock_reset_prompt_title">Réinitialiser le verrouillage de LumenCtrl</string>
+    <string name="lock_reset_prompt_subtitle">Utilisez le verrouillage d\'écran de votre téléphone pour confirmer que c\'est bien vous</string>
+    <string name="lock_reset_prompt_failed">Impossible d\'afficher le verrouillage d\'écran</string>
     <string name="lock_forgot_confirm">Tout supprimer et réinitialiser</string>
     <string name="lock_forgot_title">Vous avez oublié votre code ?</string>
     <string name="lock_next">Suivant</string>

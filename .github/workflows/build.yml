@@ -96,7 +96,7 @@ jobs:
         run: |
           chmod +x gradlew
           set -o pipefail
-          ./gradlew --no-daemon assembleRelease 2>&1 | tee build.log
+          ./gradlew --no-daemon assembleRelease :app:testDebugUnitTest 2>&1 | tee build.log
 
       - name: Check the app is Google-free
         run: |

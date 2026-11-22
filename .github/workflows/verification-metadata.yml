@@ -43,7 +43,7 @@ jobs:
         # debug key instead of refusing. Only the downloads matter; nothing from this job is published.
         run: |
           chmod +x gradlew
-          env -u CI -u GITHUB_ACTIONS ./gradlew --no-daemon --write-verification-metadata sha256 assembleDebug assembleRelease
+          env -u CI -u GITHUB_ACTIONS ./gradlew --no-daemon --write-verification-metadata sha256 assembleDebug :app:testDebugUnitTest assembleRelease
 
       - name: Print the file
         run: |

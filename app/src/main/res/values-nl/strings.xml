@@ -559,7 +559,10 @@
     <string name="lock_fingerprint_changed">Er werd een vingerafdruk toegevoegd of verwijderd. Ontgrendel met je pincode en zet ontgrendelen met vingerafdruk daarna opnieuw aan.</string>
     <string name="lock_fingerprint_failed">Ontgrendelen met je vingerafdruk lukte niet. Gebruik je pincode.</string>
     <string name="lock_forgot">Pincode vergeten?</string>
-    <string name="lock_forgot_body">De pincode kan niet teruggehaald worden. LumenCtrl wist alles wat in de app bewaard is (je bibliotheek van foto\'s en video\'s met hun bewerkingen, je presets en LUTs), zet de instellingen terug en zet de app-vergrendeling uit. Kopieën die je exporteerde naar Pictures/Lumen of Movies/Lumen en de originelen in je galerij worden niet gewist.</string>
+    <string name="lock_forgot_body">De pincode kan niet teruggehaald worden. LumenCtrl wist alles wat in de app bewaard is (je bibliotheek van foto\'s en video\'s met hun bewerkingen, je presets en LUTs), zet de instellingen terug en zet de app-vergrendeling uit. Kopieën die je exporteerde naar Pictures/Lumen of Movies/Lumen en de originelen in je galerij worden niet gewist. Als je telefoon een schermvergrendeling heeft, bevestig je eerst daarmee.</string>
+    <string name="lock_reset_prompt_title">App-vergrendeling van LumenCtrl terugzetten</string>
+    <string name="lock_reset_prompt_subtitle">Gebruik de schermvergrendeling van je telefoon om te bevestigen dat jij het bent</string>
+    <string name="lock_reset_prompt_failed">De schermvergrendeling kon niet getoond worden</string>
     <string name="lock_forgot_confirm">Alles wissen en opnieuw beginnen</string>
     <string name="lock_forgot_title">Pincode vergeten?</string>
     <string name="lock_next">Volgende</string>

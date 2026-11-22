@@ -64,6 +64,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -106,17 +107,20 @@ fun LibraryScreen(vm: LumenViewModel) {
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.PickMultipleVisualMedia(maxItems = 100)) { vm.import(it) }
     val launchPicker = { picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo)) }
 
-    // Camera: the system camera app writes into our private cache through FileProvider.
-    var captureFile by remember { mutableStateOf<File?>(null) }
-    var captureUri by remember { mutableStateOf<Uri?>(null) }
+    // Camera: the system camera app writes into our private cache through FileProvider. The path and address
+    // are saved as text, so they survive LumenCtrl being recreated (rotation in the camera app, or Android
+    // closing LumenCtrl while the camera is in front) and the photo still reaches the library.
+    var capturePath by rememberSaveable { mutableStateOf<String?>(null) }
+    var captureUriText by rememberSaveable { mutableStateOf<String?>(null) }
     val camera = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { ok ->
-        val f = captureFile; val u = captureUri
+        val f = capturePath?.let { File(it) }; val u = captureUriText?.let { Uri.parse(it) }
+        capturePath = null; captureUriText = null
         if (ok && f != null && u != null) vm.importCapture(u, f) else f?.delete()
     }
     val launchCamera: () -> Unit = {
         val f = File(context.cacheDir, "capture/IMG_${System.currentTimeMillis()}.jpg").apply { parentFile?.mkdirs() }
         val u = FileProvider.getUriForFile(context, "${context.packageName}.files", f)
-        captureFile = f; captureUri = u
+        capturePath = f.absolutePath; captureUriText = u.toString()
         runCatching { camera.launch(u) }.onFailure { vm.toast(tr(R.string.no_camera_app_available)) }
     }
 

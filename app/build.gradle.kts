@@ -113,4 +113,7 @@ dependencies {
     // On-device inference for AI masks and AI Denoise: LiteRT (TensorFlow Lite's successor),
     // standalone, no Play Services, no network, built for 16 KB memory pages.
     implementation("com.google.ai.edge.litert:litert:1.4.0")
+
+    // Unit tests only (plain JVM, never in the APK).
+    testImplementation("junit:junit:4.13.2")
 }

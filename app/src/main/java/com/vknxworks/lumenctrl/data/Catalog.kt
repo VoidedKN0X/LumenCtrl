@@ -150,16 +150,21 @@ class Catalog(private val context: Context) {
             runCatching {
                 val id = UUID.randomUUID().toString()
                 val tmp = File(dir, "$id.part")
-                context.contentResolver.openInputStream(uri)!!.use { input -> tmp.outputStream().use { input.copyTo(it) } }
-                val isImage = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-                    .also { BitmapFactory.decodeFile(tmp.path, it) }.outWidth > 0
-                val video = if (isImage) null else readVideoMeta(tmp, displayName(uri))
-                if (!isImage && video == null) { tmp.delete(); error("Not an image or video") }
-                val target = File(dir, if (isImage) "$id.img" else "$id.vid")
-                check(tmp.renameTo(target))
-                writeMeta(id, video ?: readMeta(target, displayName(uri)))
-                id
-            }.onFailure { android.util.Log.w("LumenImport", "import failed for $uri", it) }.getOrNull()
+                try {
+                    context.contentResolver.openInputStream(uri)!!.use { input -> tmp.outputStream().use { input.copyTo(it) } }
+                    val isImage = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                        .also { BitmapFactory.decodeFile(tmp.path, it) }.outWidth > 0
+                    val video = if (isImage) null else readVideoMeta(tmp, displayName(uri))
+                    if (!isImage && video == null) error("Not an image or video")
+                    val target = File(dir, if (isImage) "$id.img" else "$id.vid")
+                    check(tmp.renameTo(target))
+                    writeMeta(id, video ?: readMeta(target, displayName(uri)))
+                    id
+                } finally {
+                    // A copy that failed part-way (stream error, full disk, revoked access) never stays behind.
+                    if (tmp.exists()) tmp.delete()
+                }
+            }.getOrNull()
         }
     }
 
@@ -241,7 +246,7 @@ class Catalog(private val context: Context) {
                 hasAudio = key(android.media.MediaMetadataRetriever.METADATA_KEY_HAS_AUDIO) == "yes",
             )
         } finally { r.release() }
-    }.onFailure { android.util.Log.w("LumenImport", "video metadata failed", it) }.getOrNull()
+    }.getOrNull()
 
     private fun writeMeta(id: String, meta: PhotoMeta) {
         val file = metaFile(id)

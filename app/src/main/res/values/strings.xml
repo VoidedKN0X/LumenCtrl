@@ -570,7 +570,10 @@
     <string name="lock_fingerprint_changed">A fingerprint was added or removed. Unlock with your PIN, then turn fingerprint unlock on again.</string>
     <string name="lock_fingerprint_failed">Couldn\'t unlock with your fingerprint. Use your PIN.</string>
     <string name="lock_forgot">Forgot PIN?</string>
-    <string name="lock_forgot_body">The PIN can\'t be recovered. LumenCtrl will delete everything kept in the app (your library of photos and videos with their edits, your presets and LUTs), reset its settings and turn the app lock off. Copies you exported to Pictures/Lumen or Movies/Lumen and the originals in your gallery are not deleted.</string>
+    <string name="lock_forgot_body">The PIN can\'t be recovered. LumenCtrl will delete everything kept in the app (your library of photos and videos with their edits, your presets and LUTs), reset its settings and turn the app lock off. Copies you exported to Pictures/Lumen or Movies/Lumen and the originals in your gallery are not deleted. If your phone has a screen lock, you\'ll confirm with it first.</string>
+    <string name="lock_reset_prompt_title">Reset LumenCtrl\'s app lock</string>
+    <string name="lock_reset_prompt_subtitle">Use your phone\'s screen lock to confirm it\'s you</string>
+    <string name="lock_reset_prompt_failed">Couldn\'t show the screen lock prompt</string>
     <string name="lock_forgot_confirm">Delete everything and reset</string>
     <string name="lock_forgot_title">Forgot your PIN?</string>
     <string name="lock_next">Next</string>

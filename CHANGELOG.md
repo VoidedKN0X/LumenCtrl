@@ -4,6 +4,30 @@ What changed in each LumenCtrl release. Every release on the [Releases page](htt
 
 To publish a new version: bump `versionCode` and `versionName` in `app/build.gradle.kts`, add a section here, and push to `main`. Pushes without a version bump only build; they don't make a release.
 
+## Unreleased
+
+Built and checked by CI only: nothing here has been run on a phone yet.
+
+### Fixed
+
+- **A photo taken with "Take photo" always reaches your library.** If you turned the phone while the camera app was open, or Android closed LumenCtrl in the background while you were taking the picture, LumenCtrl forgot where the camera was saving the photo. The photo was then never added to the library and its file stayed behind in LumenCtrl's cache. LumenCtrl now remembers it across that, so the photo is added when you come back.
+- **A failed import no longer leaves a half-copied file behind.** If copying a photo or video into the library failed part-way (the file couldn't be read, the phone was full, or the other app took back access), the partial copy stayed in the library folder, counted towards the storage shown in Settings and was only removed by "Forgot PIN?". It's now deleted straight away.
+- **HDR merge and video export start without a small stutter.** Looking up the chosen photos (a quick disk read) happened on the screen's thread; it now happens in the background.
+
+### Security
+
+- **"Forgot PIN?" now asks for your phone's screen lock first.** Before, anyone holding your unlocked phone could tap "Forgot PIN?" on LumenCtrl's lock screen and, after one confirmation, wipe your library and turn the app lock off. Now LumenCtrl first asks for your phone's own PIN, pattern, password or fingerprint. If you cancel or it fails, nothing is deleted. The warning that your library, presets and LUTs will be deleted is still shown first. If your phone has no screen lock at all, the reset works as before (just the confirmation).
+- **Importing a settings file can only make privacy stricter.** A settings file could turn "Hide in screenshots" and "Hide in recent apps" off, or switch exports to "Keep all" metadata (including your location). Now an import can only turn those switches on, and can only move the metadata choice towards removing more (Keep all, then Remove location, then Strip all). Accent colour and the other export defaults are imported as before, and the list of changes shown before importing only lists what will really change.
+
+### Privacy
+
+- **Edited copies made for sharing are cleaned up.** Photos and videos rendered for the share sheet stayed in LumenCtrl's private cache until the next time you shared something, also after you deleted the photo. They are now removed every time LumenCtrl starts. A photo or video export to Pictures/Lumen or Movies/Lumen that fails part-way no longer leaves its file in the cache either.
+- **The last two log lines are gone.** Two warning lines (a failed import, with the address of the shared file, and failed video details) were still in the code. Release builds already stripped them, so only test builds could write them; they are removed now.
+
+### Project
+
+- Unit tests (JUnit 4, test-only, not in the app) for the settings import rule, run by CI on every build. `gradle/verification-metadata.xml` gains the checksums of JUnit 4.13.2 and Hamcrest 1.3, and the verification-metadata workflow now includes the test downloads.
+
 ## v0.4.1 (2026-11-22)
 
 Built and checked by CI only: nothing in this release had been run on a phone when it was published.
