@@ -62,7 +62,7 @@ object VideoExporter {
             AudioMix.Part(c.file, v, s, e, ((e - s) / v.speed).toLong())
         }
         val mixed = if (AudioMix.hasMusic(parts)) {
-            runCatching { AudioMix.render(parts, 33_333) }.onFailure { android.util.Log.w("LumenVideo", "music mix failed", it) }.getOrNull()
+            runCatching { AudioMix.render(parts, 33_333) }.getOrNull()
         } else null
         val audio = mixed?.format ?: audioPlan(clips)
         val totalUs = clips.sumOf { c -> ((c.params.video.end(c.durationMs) - c.params.video.trimStartMs) * 1000 / c.params.video.speed).toLong() }.coerceAtLeast(1)

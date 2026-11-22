@@ -65,24 +65,10 @@ object Segmenter {
             for (k in 1 until classes) if (p[b + k] > p[b + best]) best = k
             return best
         }
-        /** Mean winning-class probability: how sure the model is overall. */
-        fun confidence(): Float {
-            var s = 0.0
-            for (i in 0 until w * h) { var m = 0f; for (k in 0 until classes) m = max(m, p[i * classes + k]); s += m }
-            return (s / (w * h)).toFloat()
-        }
     }
 
     /** Both bundled models declare mean 127.5 / std 127.5 in their metadata: input in [-1, 1]. */
-    private fun infer(context: Context, asset: String, bmp: Bitmap): Probs {
-        val pr = infer(context, asset, bmp, 0)
-        // Debug aid (adb logcat -s LumenAI): which classes the model found. Stays on the device.
-        val counts = IntArray(pr.classes)
-        for (y in 0 until pr.h) for (x in 0 until pr.w) counts[pr.argmax(x, y)]++
-        android.util.Log.d("LumenAI", "$asset out ${pr.w}x${pr.h}x${pr.classes} conf=${"%.3f".format(pr.confidence())} classes=" +
-            counts.withIndex().filter { it.value > 0 }.joinToString { "${it.index}:${it.value}" })
-        return pr
-    }
+    private fun infer(context: Context, asset: String, bmp: Bitmap): Probs = infer(context, asset, bmp, 0)
 
     private fun infer(context: Context, asset: String, bmp: Bitmap, norm: Int): Probs {
         val itp = interpreter(context, asset)

@@ -185,7 +185,7 @@ object AudioMix {
                     r.rate = f.getIntOrDefault(MediaFormat.KEY_SAMPLE_RATE, RATE)
                     r.channels = f.getIntOrDefault(MediaFormat.KEY_CHANNEL_COUNT, 2)
                 }
-            }.onFailure { android.util.Log.w("LumenAudio", "can't decode ${file.name}", it) }.getOrNull()
+            }.getOrNull()
 
             private fun MediaFormat.getIntOrDefault(key: String, def: Int) = if (containsKey(key)) getInteger(key) else def
         }

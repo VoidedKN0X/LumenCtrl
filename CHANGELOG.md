@@ -10,6 +10,11 @@ To publish a new version: bump `versionCode` and `versionName` in `app/build.gra
 
 - **German mask messages keep their capital letters.** "Select: sky", "Finding sky on this phone", "Add sky mask" and "No sky found in this photo" put the mask name in lower case, which reads wrong in German, where nouns are always capitalised. German now keeps the capital; the other languages are unchanged. Not run on a phone.
 
+### Removed
+
+- **No more lines in Android's log.** LumenCtrl wrote timing and detail lines to the phone's system log after AI denoise, an AI mask, removing an object and an HDR merge, while denoising (patch size and count) and while finding a mask (what the model found), plus a warning when a song for a video couldn't be read or the music mix failed. All nine log lines are gone, and so is the switched-off timer for how long each preview frame takes to draw. Nothing else changes: the messages you see on screen, the time shown after AI denoise, and what happens when a song can't be read or the music mix fails stay exactly the same.
+- **Log lines are stripped from the release build.** The release build already removed debug, verbose and info log lines; it now also removes warning, error and other log lines, so anything a library writes to Android's log, or a log line that sneaks in later, doesn't end up in the app you install.
+
 ## v0.4.0 (2026-11-21)
 
 Built and checked by CI only: nothing in this release had been run on a phone when it was published.

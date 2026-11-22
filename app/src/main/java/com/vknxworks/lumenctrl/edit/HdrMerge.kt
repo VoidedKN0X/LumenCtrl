@@ -26,7 +26,7 @@ import kotlin.math.roundToInt
 object HdrMerge {
     const val HEADROOM_STOPS = 3f
 
-    class Result(val sdr: Bitmap, val gainmap: Bitmap?, val shifts: List<Pair<Int, Int>>, val exposures: List<Float>)
+    class Result(val sdr: Bitmap, val gainmap: Bitmap?)
 
     private val LIN = FloatArray(256) { (it / 255f).pow(2.2f) }
 
@@ -107,7 +107,7 @@ object HdrMerge {
             if (gainBmp !== full) full.recycle()
             Hdr.attachGainmap(sdrBmp, gainBmp, HEADROOM_STOPS)
         }
-        return Result(sdrBmp, gainBmp, shifts, k.toList())
+        return Result(sdrBmp, gainBmp)
     }
 
     /** Relative brightness a frame received: exposure time × ISO / f². */

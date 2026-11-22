@@ -11,11 +11,6 @@ import javax.microedition.khronos.opengles.GL10
 import kotlin.math.min
 import kotlin.math.roundToInt
 
-// Set true to log GPU time per preview frame (tag LumenGL). Measured on a Mali GPU,
-// Android 17: about 3.8 ms average for a 1165x1553 preview of a 1536x2048 texture
-// with the original single-pass shader.
-private const val PROFILE = false
-
 /** 64-bin histograms of the rendered result, per channel and luminance. */
 class Histogram(val r: IntArray, val g: IntArray, val b: IntArray, val l: IntArray)
 
@@ -139,12 +134,7 @@ class EditorRenderer : GLSurfaceView.Renderer {
         val x = (fx + (fw - w) / 2f + opt.panX).roundToInt()
         val y = (fy + (fh - h) / 2f - opt.panY).roundToInt()
         GL.glViewport(x, y, w, h)
-        val t0 = System.nanoTime()
         program.draw(texture, texW, texH, w, h, p, opt, aiTex, gainTex, dnTex)
-        if (PROFILE) {
-            GL.glFinish()
-            android.util.Log.d("LumenGL", "frame ${w}x$h tex ${texW}x$texH: ${(System.nanoTime() - t0) / 1_000_000.0} ms")
-        }
         onHistogram?.let { cb -> cb(computeHistogram(p, opt)) }
     }
 

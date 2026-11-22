@@ -74,7 +74,6 @@ object Denoiser {
             val rowBuf = IntArray(p * w)
             val patch = FloatArray(p * p * 3)
             val sumIn = DoubleArray(3); val sumOut = DoubleArray(3)
-            android.util.Log.d("LumenDenoise", "${m(model)} patch $p ${inT.dataType()} ${w}x$h → ${nW * nH} patches")
             val total = nW * nH
             var done = 0
 
@@ -220,8 +219,6 @@ object Denoiser {
             g[(y * w + x) * 3 + c] = s / n
         }
     }
-
-    private fun m(model: Model) = model.name
 
     /** Long-edge cap for the denoised base (keeps time and memory reasonable). */
     const val MAX_EDGE = 4096

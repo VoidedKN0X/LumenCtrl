@@ -277,7 +277,6 @@ class LumenViewModel(app: Application) : AndroidViewModel(app), com.vknxworks.lu
             }.onSuccess { decoded ->
                 if (openPhoto?.id == photo.id) baseDenoised = decoded
                 val bmp = withContext(Dispatchers.Default) { Removals.apply(decoded, photo.original, params.removals, recycleInput = false) }
-                android.util.Log.d("LumenDenoise", "${model.name} done in ${System.currentTimeMillis() - t0} ms")
                 if (openPhoto?.id == photo.id) {
                     denoised = bmp
                     val amt = params[Param.AI_DENOISE]
@@ -311,7 +310,6 @@ class LumenViewModel(app: Application) : AndroidViewModel(app), com.vknxworks.lu
             runCatching {
                 val files = ids.map { catalog.photo(it) }.filter { !it.isVideo }.map { it.original }
                 val r = withContext(Dispatchers.Default) { HdrMerge.merge(files) }
-                android.util.Log.d("LumenHDR", "merge shifts=${r.shifts} exposures=${r.exposures} gainmap=${r.gainmap != null}")
                 catalog.importBitmap(r.sdr, "HDR merge ${SimpleDateFormat("yyyy-MM-dd HH.mm", Locale.US).format(Date())}.jpg")
                 r.gainmap != null
             }.onSuccess { hdr ->
@@ -783,7 +781,6 @@ class LumenViewModel(app: Application) : AndroidViewModel(app), com.vknxworks.lu
         val app = getApplication<Application>()
         viewModelScope.launch {
             busy = tr(R.string.finding_x_on_device, inSentence(kind.label))
-            val t0 = System.currentTimeMillis()
             runCatching {
                 val mask = withContext(Dispatchers.Default) { Segmenter.segment(app, bmp, kind) }
                 val id = UUID.randomUUID().toString().take(8)
@@ -791,7 +788,6 @@ class LumenViewModel(app: Application) : AndroidViewModel(app), com.vknxworks.lu
                 aiMasks = aiMasks + (id to mask)
                 id
             }.onSuccess { id ->
-                android.util.Log.d("LumenAI", "${kind.name} mask in ${System.currentTimeMillis() - t0} ms")
                 edit(tr(R.string.select_x, inSentence(kind.label))) {
                     it.copy(masks = it.masks + LocalMask(id, MaskType.AI, 0f, 0f, 0f, 0f, feather = 0.3f, ai = kind))
                 }
@@ -901,7 +897,6 @@ class LumenViewModel(app: Application) : AndroidViewModel(app), com.vknxworks.lu
         removeCancel = false
         viewModelScope.launch {
             busy = tr(R.string.removing_object)
-            val t0 = System.currentTimeMillis()
             runCatching {
                 withContext(Dispatchers.Default) {
                     val (removal, patch) = Removals.compute(pic, strokes, radius) { removeCancel || openPhoto?.id != photo.id }
@@ -910,7 +905,6 @@ class LumenViewModel(app: Application) : AndroidViewModel(app), com.vknxworks.lu
                     removal
                 }
             }.onSuccess { removal ->
-                android.util.Log.d("LumenRemove", "object removed in ${System.currentTimeMillis() - t0} ms")
                 if (openPhoto?.id == photo.id) {
                     edit(tr(R.string.remove_object)) { it.copy(removals = it.removals + removal) }
                     onDone()
